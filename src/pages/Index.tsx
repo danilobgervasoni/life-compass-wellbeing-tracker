@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { PillarCard } from "@/components/PillarCard";
 import { PillarDetail } from "@/components/PillarDetail";
+import { Header } from "@/components/Header";
 import { mockPillars } from "@/data/mockData";
 import { Pillar } from "@/types/pillar";
 
@@ -10,21 +11,38 @@ const Index = () => {
 
   if (selectedPillar) {
     return (
-      <PillarDetail 
-        pillar={selectedPillar} 
-        onBack={() => setSelectedPillar(null)}
-      />
+      <div className="pt-20">
+        <Header 
+          showBackButton={true}
+          onBackToHome={() => setSelectedPillar(null)}
+        />
+        <PillarDetail 
+          pillar={selectedPillar} 
+          onBack={() => setSelectedPillar(null)}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-white">
+      <Header onBackToHome={() => setSelectedPillar(null)} />
+      
+      <div className="container mx-auto px-4 py-8 pt-28">
+        {/* Enhanced Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-light text-slate-800 mb-4">
-            Algoritmo de Governo
-          </h1>
+          <div className="mb-6">
+            <h1 className="text-5xl md:text-6xl font-light mb-4">
+              <span className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-emerald-800 bg-clip-text text-transparent font-bold">
+                Algoritmo
+              </span>
+              <span className="text-slate-800 font-light"> de </span>
+              <span className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 bg-clip-text text-transparent font-bold">
+                Governo
+              </span>
+            </h1>
+            <div className="w-32 h-1 bg-gradient-to-r from-emerald-500 to-emerald-700 mx-auto rounded-full shadow-lg"></div>
+          </div>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             Acompanhe seu progresso diário nas áreas essenciais da sua vida. 
             Construa hábitos, reflita sobre o crescimento e mantenha o equilíbrio.

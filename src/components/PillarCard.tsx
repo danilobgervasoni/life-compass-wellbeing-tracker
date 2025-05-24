@@ -27,10 +27,20 @@ export const PillarCard = ({ pillar, onClick }: PillarCardProps) => {
     return "text-slate-400";
   };
 
-  // Check if there's a score for today
-  const today = new Date().toISOString().split('T')[0];
-  const todayEntry = pillar.entries.find(entry => entry.date === today);
-  const displayScore = todayEntry ? todayEntry.score : null;
+  // Calculate monthly average
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  const currentMonthEntries = pillar.entries.filter(entry => {
+    const entryDate = new Date(entry.date);
+    return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+  });
+
+  const monthlyAverage = currentMonthEntries.length > 0 
+    ? currentMonthEntries.reduce((sum, entry) => sum + entry.score, 0) / currentMonthEntries.length
+    : 0;
+
+  const displayScore = Number(monthlyAverage.toFixed(1));
 
   return (
     <Card 
@@ -59,9 +69,9 @@ export const PillarCard = ({ pillar, onClick }: PillarCardProps) => {
         {/* Score */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-slate-500">Pontuação de Hoje:</span>
-            <span className={`text-2xl font-bold ${getScoreColor(displayScore || 0)}`}>
-              {displayScore !== null ? displayScore : "—"}
+            <span className="text-sm text-slate-500">Média do Mês:</span>
+            <span className={`text-2xl font-bold ${getScoreColor(displayScore)}`}>
+              {displayScore > 0 ? displayScore : "—"}
             </span>
             <span className="text-sm text-slate-400">/10</span>
           </div>
@@ -70,7 +80,7 @@ export const PillarCard = ({ pillar, onClick }: PillarCardProps) => {
           <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
             <div 
               className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-500`}
-              style={{ width: `${displayScore ? (displayScore / 10) * 100 : 0}%` }}
+              style={{ width: `${displayScore > 0 ? (displayScore / 10) * 100 : 0}%` }}
             />
           </div>
         </div>

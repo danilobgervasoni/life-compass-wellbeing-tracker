@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from "react";
-import { ArrowLeft, Calendar, Edit3, Save } from "lucide-react";
+import { Calendar, Edit3, Save } from "lucide-react";
 import { Pillar, DailyEntry } from "@/types/pillar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,6 +36,11 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
       return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
     });
   }, [pillarEntries, currentMonth, currentYear]);
+
+  // Calculate monthly average
+  const monthlyAverage = currentMonthEntries.length > 0 
+    ? currentMonthEntries.reduce((sum, entry) => sum + entry.score, 0) / currentMonthEntries.length
+    : 0;
 
   const filteredEntries = currentMonthEntries.slice(
     timeframe === 'week' ? -7 : -30
@@ -78,24 +83,16 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={onBack}
-            className="flex items-center space-x-2 text-slate-600 hover:text-slate-800"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Voltar ao Painel</span>
-          </Button>
-          
           <div className="flex space-x-2">
             <Button
               variant={timeframe === 'week' ? 'default' : 'outline'}
               onClick={() => setTimeframe('week')}
               size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700"
             >
               Semana
             </Button>
@@ -103,6 +100,7 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
               variant={timeframe === 'month' ? 'default' : 'outline'}
               onClick={() => setTimeframe('month')}
               size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700"
             >
               Mês
             </Button>
@@ -129,11 +127,16 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
           {/* Chart */}
           <div className="lg:col-span-2">
             <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-              <div className="flex items-center space-x-2 mb-6">
-                <Calendar className="h-5 w-5 text-slate-600" />
-                <h2 className="text-xl font-semibold text-slate-800">
-                  Progresso ao Longo do Tempo
-                </h2>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-5 w-5 text-slate-600" />
+                  <h2 className="text-xl font-semibold text-slate-800">
+                    Progresso ao Longo do Tempo
+                  </h2>
+                </div>
+                <div className="text-emerald-700 font-semibold">
+                  Média do mês: {monthlyAverage.toFixed(1)}
+                </div>
               </div>
               <PillarChart entries={filteredEntries} color={pillar.color} />
             </Card>
@@ -155,12 +158,12 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
                       max="10"
                       value={displayScore}
                       onChange={handleScoreChange}
-                      placeholder="0-10"
+                      placeholder={`de 0 a 10, informe como se sente hoje quanto a '${pillar.name}'`}
                       className="text-center text-2xl font-bold"
                       disabled={!!todayEntry}
                     />
                     {!todayEntry && todayScore !== "" && (
-                      <Button onClick={handleSaveScore} size="sm">
+                      <Button onClick={handleSaveScore} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                         Salvar
                       </Button>
                     )}
