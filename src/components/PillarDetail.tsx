@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from "react";
-import { Calendar, Edit3, Save } from "lucide-react";
+import { Calendar, Edit3, Save, Edit } from "lucide-react";
 import { Pillar, DailyEntry } from "@/types/pillar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,6 +20,7 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
   const [notes, setNotes] = useState(pillar.entries[pillar.entries.length - 1]?.notes || "");
   const [todayScore, setTodayScore] = useState<number | string>("");
   const [pillarEntries, setPillarEntries] = useState<DailyEntry[]>(pillar.entries);
+  const [isEditingScore, setIsEditingScore] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const currentMonth = new Date().getMonth();
@@ -68,7 +69,15 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
       updatedEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
       setPillarEntries(updatedEntries);
+      setIsEditingScore(false);
       console.log(`Pontuação salva para ${pillar.name}: ${scoreValue}`);
+    }
+  };
+
+  const handleEditScore = () => {
+    if (todayEntry) {
+      setTodayScore(todayEntry.score);
+      setIsEditingScore(true);
     }
   };
 
@@ -109,13 +118,13 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
 
         {/* Pillar Header */}
         <div className="text-center mb-8">
-          <div className={`w-20 h-20 rounded-2xl bg-gradient-to-r ${pillar.color} flex items-center justify-center text-4xl shadow-xl mx-auto mb-4`}>
+          <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-r ${pillar.color} flex items-center justify-center text-3xl sm:text-4xl shadow-xl mx-auto mb-4`}>
             {pillar.icon}
           </div>
-          <h1 className="text-3xl md:text-4xl font-light text-slate-800 mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-light text-slate-800 mb-2">
             {pillar.name}
           </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto px-4">
             {pillar.description}
           </p>
           <p className="text-sm text-slate-500 mt-2">
@@ -123,18 +132,18 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
           {/* Chart */}
           <div className="lg:col-span-2">
-            <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-              <div className="flex items-center justify-between mb-6">
+            <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-5 w-5 text-slate-600" />
-                  <h2 className="text-xl font-semibold text-slate-800">
+                  <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
                     Progresso ao Longo do Tempo
                   </h2>
                 </div>
-                <div className="text-emerald-700 font-semibold">
+                <div className="text-emerald-700 font-semibold text-sm sm:text-base">
                   Média do mês: {monthlyAverage.toFixed(1)}
                 </div>
               </div>
@@ -145,33 +154,51 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
           {/* Score Input & Stats */}
           <div className="space-y-6">
             {/* Today's Score Input */}
-            <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
               <h3 className="text-lg font-semibold text-slate-800 mb-4">Pontuação de Hoje</h3>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="score">Insira sua pontuação (0-10)</Label>
-                  <div className="flex space-x-2">
+                  <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
+                  <div className="flex space-x-2 mt-2">
                     <Input
                       id="score"
                       type="number"
                       min="0"
                       max="10"
-                      value={displayScore}
+                      value={isEditingScore ? todayScore : (displayScore || "")}
                       onChange={handleScoreChange}
                       placeholder={`de 0 a 10, informe como se sente hoje quanto a '${pillar.name}'`}
-                      className="text-center text-2xl font-bold"
-                      disabled={!!todayEntry}
+                      className="text-center text-xl sm:text-2xl font-bold text-sm"
+                      disabled={todayEntry && !isEditingScore}
                     />
-                    {!todayEntry && todayScore !== "" && (
-                      <Button onClick={handleSaveScore} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                    {!todayEntry && todayScore !== "" && !isEditingScore && (
+                      <Button onClick={handleSaveScore} size="sm" className="bg-emerald-600 hover:bg-emerald-700 shrink-0">
+                        Salvar
+                      </Button>
+                    )}
+                    {isEditingScore && (
+                      <Button onClick={handleSaveScore} size="sm" className="bg-emerald-600 hover:bg-emerald-700 shrink-0">
                         Salvar
                       </Button>
                     )}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className={`text-5xl font-bold mb-2 bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
-                    {displayScore || "—"}
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
+                      {displayScore || "—"}
+                    </div>
+                    {todayEntry && !isEditingScore && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleEditScore}
+                        className="text-slate-500 hover:text-emerald-700"
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="ml-1 text-xs">Editar</span>
+                      </Button>
+                    )}
                   </div>
                   <div className="text-slate-500">de 10</div>
                   <div className={`w-full h-3 bg-slate-200 rounded-full mt-4 overflow-hidden`}>
@@ -185,7 +212,7 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
             </Card>
 
             {/* Notes */}
-            <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-slate-800">Notas de Hoje</h3>
                 <Button
@@ -202,10 +229,10 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Adicione seus pensamentos para hoje..."
-                  className="min-h-[100px] resize-none"
+                  className="min-h-[100px] resize-none text-sm"
                 />
               ) : (
-                <div className="min-h-[100px] p-3 bg-slate-50 rounded-lg">
+                <div className="min-h-[100px] p-3 bg-slate-50 rounded-lg text-sm">
                   {notes || (
                     <span className="text-slate-400 italic">
                       Ainda não há notas. Clique em editar para adicionar seus pensamentos.
