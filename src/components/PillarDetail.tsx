@@ -1,7 +1,7 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ArrowLeft, Calendar, Edit3, Save } from "lucide-react";
-import { Pillar } from "@/types/pillar";
+import { Pillar, DailyEntry } from "@/types/pillar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,17 +18,63 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
   const [timeframe, setTimeframe] = useState<'week' | 'month'>('month');
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(pillar.entries[pillar.entries.length - 1]?.notes || "");
-  const [todayScore, setTodayScore] = useState(pillar.currentScore);
+  const [todayScore, setTodayScore] = useState<number | string>("");
+  const [pillarEntries, setPillarEntries] = useState<DailyEntry[]>(pillar.entries);
 
-  const filteredEntries = pillar.entries.slice(
+  const today = new Date().toISOString().split('T')[0];
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  // Check if today's score already exists
+  const todayEntry = pillarEntries.find(entry => entry.date === today);
+  const displayScore = todayEntry ? todayEntry.score : todayScore;
+
+  // Filter entries for current month only
+  const currentMonthEntries = useMemo(() => {
+    return pillarEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
+    });
+  }, [pillarEntries, currentMonth, currentYear]);
+
+  const filteredEntries = currentMonthEntries.slice(
     timeframe === 'week' ? -7 : -30
   );
 
   const handleScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (value >= 0 && value <= 10) {
+    const value = e.target.value;
+    if (value === "" || (parseInt(value) >= 0 && parseInt(value) <= 10)) {
       setTodayScore(value);
     }
+  };
+
+  const handleSaveScore = () => {
+    if (todayScore !== "" && !isNaN(Number(todayScore))) {
+      const scoreValue = Number(todayScore);
+      const newEntry: DailyEntry = {
+        date: today,
+        score: scoreValue,
+        notes: notes
+      };
+
+      // Update entries - either add new or update existing
+      const updatedEntries = pillarEntries.filter(entry => entry.date !== today);
+      updatedEntries.push(newEntry);
+      updatedEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      setPillarEntries(updatedEntries);
+      console.log(`Pontuação salva para ${pillar.name}: ${scoreValue}`);
+    }
+  };
+
+  // Format today's date in Portuguese
+  const formatTodayDate = () => {
+    const today = new Date();
+    const months = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    return `${today.getDate()}, ${months[today.getMonth()]} de ${today.getFullYear()}`;
   };
 
   return (
@@ -74,6 +120,9 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             {pillar.description}
           </p>
+          <p className="text-sm text-slate-500 mt-2">
+            {formatTodayDate()}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
@@ -98,25 +147,34 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="score">Insira sua pontuação (0-10)</Label>
-                  <Input
-                    id="score"
-                    type="number"
-                    min="0"
-                    max="10"
-                    value={todayScore}
-                    onChange={handleScoreChange}
-                    className="text-center text-2xl font-bold"
-                  />
+                  <div className="flex space-x-2">
+                    <Input
+                      id="score"
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={displayScore}
+                      onChange={handleScoreChange}
+                      placeholder="0-10"
+                      className="text-center text-2xl font-bold"
+                      disabled={!!todayEntry}
+                    />
+                    {!todayEntry && todayScore !== "" && (
+                      <Button onClick={handleSaveScore} size="sm">
+                        Salvar
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className={`text-5xl font-bold mb-2 bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
-                    {todayScore}
+                    {displayScore || "—"}
                   </div>
                   <div className="text-slate-500">de 10</div>
                   <div className={`w-full h-3 bg-slate-200 rounded-full mt-4 overflow-hidden`}>
                     <div 
                       className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-700`}
-                      style={{ width: `${(todayScore / 10) * 100}%` }}
+                      style={{ width: `${displayScore ? (Number(displayScore) / 10) * 100 : 0}%` }}
                     />
                   </div>
                 </div>

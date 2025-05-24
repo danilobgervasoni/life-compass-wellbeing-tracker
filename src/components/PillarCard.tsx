@@ -23,8 +23,14 @@ export const PillarCard = ({ pillar, onClick }: PillarCardProps) => {
   const getScoreColor = (score: number) => {
     if (score >= 8) return "text-emerald-600";
     if (score >= 6) return "text-yellow-600";
-    return "text-red-500";
+    if (score > 0) return "text-red-500";
+    return "text-slate-400";
   };
+
+  // Check if there's a score for today
+  const today = new Date().toISOString().split('T')[0];
+  const todayEntry = pillar.entries.find(entry => entry.date === today);
+  const displayScore = todayEntry ? todayEntry.score : null;
 
   return (
     <Card 
@@ -54,8 +60,8 @@ export const PillarCard = ({ pillar, onClick }: PillarCardProps) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-slate-500">Pontuação de Hoje:</span>
-            <span className={`text-2xl font-bold ${getScoreColor(pillar.currentScore)}`}>
-              {pillar.currentScore}
+            <span className={`text-2xl font-bold ${getScoreColor(displayScore || 0)}`}>
+              {displayScore !== null ? displayScore : "—"}
             </span>
             <span className="text-sm text-slate-400">/10</span>
           </div>
@@ -64,7 +70,7 @@ export const PillarCard = ({ pillar, onClick }: PillarCardProps) => {
           <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
             <div 
               className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-500`}
-              style={{ width: `${(pillar.currentScore / 10) * 100}%` }}
+              style={{ width: `${displayScore ? (displayScore / 10) * 100 : 0}%` }}
             />
           </div>
         </div>
