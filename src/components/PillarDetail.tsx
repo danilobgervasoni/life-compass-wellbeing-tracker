@@ -5,6 +5,8 @@ import { Pillar } from "@/types/pillar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PillarChart } from "@/components/PillarChart";
 
 interface PillarDetailProps {
@@ -16,10 +18,18 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
   const [timeframe, setTimeframe] = useState<'week' | 'month'>('month');
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(pillar.entries[pillar.entries.length - 1]?.notes || "");
+  const [todayScore, setTodayScore] = useState(pillar.currentScore);
 
   const filteredEntries = pillar.entries.slice(
     timeframe === 'week' ? -7 : -30
   );
+
+  const handleScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (value >= 0 && value <= 10) {
+      setTodayScore(value);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -32,7 +42,7 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
             className="flex items-center space-x-2 text-slate-600 hover:text-slate-800"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to Dashboard</span>
+            <span>Voltar ao Painel</span>
           </Button>
           
           <div className="flex space-x-2">
@@ -41,14 +51,14 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
               onClick={() => setTimeframe('week')}
               size="sm"
             >
-              Week
+              Semana
             </Button>
             <Button
               variant={timeframe === 'month' ? 'default' : 'outline'}
               onClick={() => setTimeframe('month')}
               size="sm"
             >
-              Month
+              Mês
             </Button>
           </div>
         </div>
@@ -73,28 +83,42 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
               <div className="flex items-center space-x-2 mb-6">
                 <Calendar className="h-5 w-5 text-slate-600" />
                 <h2 className="text-xl font-semibold text-slate-800">
-                  Progress Over Time
+                  Progresso ao Longo do Tempo
                 </h2>
               </div>
               <PillarChart entries={filteredEntries} color={pillar.color} />
             </Card>
           </div>
 
-          {/* Notes & Stats */}
+          {/* Score Input & Stats */}
           <div className="space-y-6">
-            {/* Current Score */}
+            {/* Today's Score Input */}
             <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Current Score</h3>
-              <div className="text-center">
-                <div className={`text-5xl font-bold mb-2 bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
-                  {pillar.currentScore}
-                </div>
-                <div className="text-slate-500">out of 10</div>
-                <div className={`w-full h-3 bg-slate-200 rounded-full mt-4 overflow-hidden`}>
-                  <div 
-                    className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-700`}
-                    style={{ width: `${(pillar.currentScore / 10) * 100}%` }}
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Pontuação de Hoje</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="score">Insira sua pontuação (0-10)</Label>
+                  <Input
+                    id="score"
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={todayScore}
+                    onChange={handleScoreChange}
+                    className="text-center text-2xl font-bold"
                   />
+                </div>
+                <div className="text-center">
+                  <div className={`text-5xl font-bold mb-2 bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
+                    {todayScore}
+                  </div>
+                  <div className="text-slate-500">de 10</div>
+                  <div className={`w-full h-3 bg-slate-200 rounded-full mt-4 overflow-hidden`}>
+                    <div 
+                      className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-700`}
+                      style={{ width: `${(todayScore / 10) * 100}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             </Card>
@@ -102,7 +126,7 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
             {/* Notes */}
             <Card className="p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-800">Today's Notes</h3>
+                <h3 className="text-lg font-semibold text-slate-800">Notas de Hoje</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -116,14 +140,14 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add your thoughts for today..."
+                  placeholder="Adicione seus pensamentos para hoje..."
                   className="min-h-[100px] resize-none"
                 />
               ) : (
                 <div className="min-h-[100px] p-3 bg-slate-50 rounded-lg">
                   {notes || (
                     <span className="text-slate-400 italic">
-                      No notes yet. Click edit to add your thoughts.
+                      Ainda não há notas. Clique em editar para adicionar seus pensamentos.
                     </span>
                   )}
                 </div>

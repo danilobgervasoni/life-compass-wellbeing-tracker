@@ -10,7 +10,7 @@ interface PillarChartProps {
 export const PillarChart = ({ entries, color }: PillarChartProps) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' });
   };
 
   const chartData = entries.map(entry => ({
@@ -57,6 +57,8 @@ export const PillarChart = ({ entries, color }: PillarChartProps) => {
               padding: '12px'
             }}
             labelStyle={{ color: '#334155', fontWeight: 'semibold' }}
+            formatter={(value: any) => [`${value}/10`, 'Pontuação']}
+            labelFormatter={(label: any) => `Data: ${label}`}
           />
           <Line 
             type="monotone" 

@@ -23,11 +23,11 @@ const Index = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-light text-slate-800 mb-4">
-            Life Pillars
+            Algoritmo de Governo
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Track your daily progress across the essential areas of your life. 
-            Build habits, reflect on growth, and maintain balance.
+            Acompanhe seu progresso diário nas áreas essenciais da sua vida. 
+            Construa hábitos, reflita sobre o crescimento e mantenha o equilíbrio.
           </p>
         </div>
 
@@ -45,7 +45,7 @@ const Index = () => {
         {/* Footer */}
         <div className="text-center mt-16 text-slate-500">
           <p className="text-sm">
-            Start each day with intention. End each day with reflection.
+            Comece cada dia com intenção. Termine cada dia com reflexão.
           </p>
         </div>
       </div>

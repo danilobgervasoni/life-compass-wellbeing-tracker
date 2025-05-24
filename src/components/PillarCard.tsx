@@ -53,7 +53,7 @@ export const PillarCard = ({ pillar, onClick }: PillarCardProps) => {
         {/* Score */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-slate-500">Today's Score:</span>
+            <span className="text-sm text-slate-500">Pontuação de Hoje:</span>
             <span className={`text-2xl font-bold ${getScoreColor(pillar.currentScore)}`}>
               {pillar.currentScore}
             </span>
