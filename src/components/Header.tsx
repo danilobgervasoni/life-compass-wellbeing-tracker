@@ -6,9 +6,10 @@ import { useState } from "react";
 interface HeaderProps {
   onBackToHome?: () => void;
   showBackButton?: boolean;
+  onNavigateToReflections?: () => void;
 }
 
-export const Header = ({ onBackToHome, showBackButton = false }: HeaderProps) => {
+export const Header = ({ onBackToHome, showBackButton = false, onNavigateToReflections }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -43,8 +44,11 @@ export const Header = ({ onBackToHome, showBackButton = false }: HeaderProps) =>
             <button className="text-slate-700 hover:text-emerald-700 font-medium transition-colors">
               Cards
             </button>
-            <button className="text-slate-700 hover:text-emerald-700 font-medium transition-colors">
-              Anotações
+            <button 
+              className="text-slate-700 hover:text-emerald-700 font-medium transition-colors"
+              onClick={onNavigateToReflections}
+            >
+              Reflexões
             </button>
           </nav>
 
@@ -79,9 +83,12 @@ export const Header = ({ onBackToHome, showBackButton = false }: HeaderProps) =>
               </button>
               <button 
                 className="text-slate-700 hover:text-emerald-700 font-medium transition-colors text-left"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={() => {
+                  onNavigateToReflections?.();
+                  setIsMobileMenuOpen(false);
+                }}
               >
-                Anotações
+                Reflexões
               </button>
             </nav>
           </div>
