@@ -4,7 +4,8 @@ import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Star, Search, MessageSquare } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Star, Search, MessageSquare, Filter, Calendar as CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Reflection {
@@ -25,7 +26,7 @@ const mockReflections: Reflection[] = [
     pillarId: "dinheiro",
     pillarName: "Dinheiro",
     pillarIcon: "💰",
-    content: "Consegui economizar mais hoje do que esperava. Estou me sentindo mais confiante sobre meus objetivos financeiros.",
+    content: "Consegui economizar mais hoje do que esperava. Estou me sentindo mais confiante sobre meus objetivos financeiros. A disciplina está começando a dar frutos.",
     isFavorite: true
   },
   {
@@ -63,13 +64,44 @@ const mockReflections: Reflection[] = [
     pillarIcon: "📚",
     content: "Li um capítulo interessante sobre produtividade. Vou aplicar as técnicas amanhã.",
     isFavorite: false
+  },
+  {
+    id: "6",
+    date: "2025-05-22",
+    pillarId: "tempo",
+    pillarName: "Tempo",
+    pillarIcon: "⏰",
+    content: "Organizei melhor minha agenda hoje. Consegui ter mais tempo de qualidade.",
+    isFavorite: false
+  },
+  {
+    id: "7",
+    date: "2025-05-21",
+    pillarId: "social",
+    pillarName: "Social",
+    pillarIcon: "👥",
+    content: "Encontrei amigos após muito tempo. Foi revigorante para minha energia social.",
+    isFavorite: true
   }
+];
+
+const pillarOptions = [
+  { id: "dinheiro", name: "Dinheiro", icon: "💰" },
+  { id: "espiritualidade", name: "Espiritualidade", icon: "🕊️" },
+  { id: "tempo", name: "Tempo", icon: "⏰" },
+  { id: "relacionamento", name: "Relacionamento", icon: "❤️" },
+  { id: "conhecimento", name: "Conhecimento", icon: "📚" },
+  { id: "saude", name: "Saúde", icon: "💪" },
+  { id: "social", name: "Social", icon: "👥" }
 ];
 
 const Reflections = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPillar, setSelectedPillar] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [reflections, setReflections] = useState(mockReflections);
+  const [expandedReflection, setExpandedReflection] = useState<string | null>(null);
 
   const handleBackToHome = () => {
     navigate("/");
@@ -85,13 +117,36 @@ const Reflections = () => {
     );
   };
 
-  // Filter reflections based on search term
-  const filteredReflections = reflections.filter(reflection =>
-    reflection.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    reflection.pillarName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter reflections based on all criteria
+  const filteredReflections = reflections.filter(reflection => {
+    const matchesSearch = reflection.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         reflection.pillarName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPillar = !selectedPillar || reflection.pillarId === selectedPillar;
+    const matchesDate = !selectedDate || reflection.date === selectedDate;
+    
+    return matchesSearch && matchesPillar && matchesDate;
+  });
 
-  // Group reflections by date
+  // Get latest reflection for each pillar
+  const getLatestReflectionsByPillar = () => {
+    const latestByPillar: Record<string, Reflection> = {};
+    
+    reflections.forEach(reflection => {
+      if (!latestByPillar[reflection.pillarId] || 
+          new Date(reflection.date) > new Date(latestByPillar[reflection.pillarId].date)) {
+        latestByPillar[reflection.pillarId] = reflection;
+      }
+    });
+    
+    return pillarOptions.map(pillar => ({
+      pillar,
+      reflection: latestByPillar[pillar.id] || null
+    }));
+  };
+
+  const latestReflections = getLatestReflectionsByPillar();
+
+  // Group filtered reflections by date
   const groupedReflections = filteredReflections.reduce((groups, reflection) => {
     const date = reflection.date;
     if (!groups[date]) {
@@ -116,6 +171,12 @@ const Reflections = () => {
     return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
   };
 
+  const clearFilters = () => {
+    setSelectedPillar("");
+    setSelectedDate("");
+    setSearchTerm("");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-slate-50">
       <Header 
@@ -135,36 +196,147 @@ const Reflections = () => {
             </p>
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-8">
-            <div className="relative max-w-md mx-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                type="text"
-                placeholder="Buscar por pilar ou palavra-chave..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white/80 backdrop-blur-sm border-emerald-200 focus:border-emerald-400"
-              />
+          {/* Filters */}
+          <Card className="p-4 sm:p-6 mb-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <div className="flex items-center space-x-2 mb-4">
+              <Filter className="h-5 w-5 text-slate-600" />
+              <h3 className="text-lg font-medium text-slate-800">Filtros</h3>
             </div>
-          </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  type="text"
+                  placeholder="Buscar por palavra-chave..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-white border-emerald-200 focus:border-emerald-400"
+                />
+              </div>
+              
+              {/* Pillar Filter */}
+              <Select value={selectedPillar} onValueChange={setSelectedPillar}>
+                <SelectTrigger className="bg-white border-emerald-200 focus:border-emerald-400">
+                  <SelectValue placeholder="Filtrar por pilar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pillarOptions.map(pillar => (
+                    <SelectItem key={pillar.id} value={pillar.id}>
+                      <div className="flex items-center space-x-2">
+                        <span>{pillar.icon}</span>
+                        <span>{pillar.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Date Filter */}
+              <div className="relative">
+                <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="pl-10 bg-white border-emerald-200 focus:border-emerald-400"
+                />
+              </div>
+            </div>
+            
+            {(selectedPillar || selectedDate || searchTerm) && (
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={clearFilters}
+                  className="text-slate-600 hover:text-slate-800"
+                >
+                  Limpar filtros
+                </Button>
+              </div>
+            )}
+          </Card>
 
-          {/* Reflections Content */}
+          {/* Latest Reflections */}
+          <Card className="p-4 sm:p-6 mb-8 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <h3 className="text-lg font-medium text-slate-800 mb-4">
+              Últimas anotações de cada pilar
+            </h3>
+            <div className="grid gap-3">
+              {latestReflections.map(({ pillar, reflection }) => (
+                <div
+                  key={pillar.id}
+                  className={`
+                    p-3 rounded-lg border transition-colors cursor-pointer
+                    ${reflection ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100' : 'bg-slate-50 border-slate-200'}
+                  `}
+                  onClick={() => reflection && setExpandedReflection(
+                    expandedReflection === reflection.id ? null : reflection.id
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-lg">{pillar.icon}</span>
+                      <div>
+                        <span className="font-medium text-slate-800">{pillar.name}</span>
+                        {reflection && (
+                          <p className="text-xs text-slate-500">
+                            {formatDate(reflection.date)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {reflection ? (
+                      <div className="text-emerald-600 text-sm">Ver</div>
+                    ) : (
+                      <span className="text-slate-400 text-sm">Sem anotações</span>
+                    )}
+                  </div>
+                  
+                  {reflection && expandedReflection === reflection.id && (
+                    <div className="mt-3 pt-3 border-t border-emerald-200">
+                      <p className="text-slate-700 text-sm leading-relaxed">
+                        {reflection.content}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {reflection && expandedReflection !== reflection.id && (
+                    <p className="text-slate-600 text-sm mt-2 line-clamp-2">
+                      {reflection.content.substring(0, 80)}...
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Filtered Reflections Content */}
           {sortedDates.length === 0 ? (
             <Card className="p-8 text-center bg-white/80 backdrop-blur-sm border-0 shadow-lg">
               <MessageSquare className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-700 mb-2">
-                Você ainda não escreveu nenhuma reflexão
+                {selectedPillar || selectedDate || searchTerm 
+                  ? "Nenhuma reflexão encontrada com os filtros aplicados"
+                  : "Você ainda não escreveu nenhuma reflexão"
+                }
               </h3>
               <p className="text-slate-500 text-sm">
-                Comece avaliando seus pilares e adicionando suas reflexões diárias.
+                {selectedPillar || selectedDate || searchTerm
+                  ? "Tente ajustar os filtros ou limpar a busca."
+                  : "Comece avaliando seus pilares e adicionando suas reflexões diárias."
+                }
               </p>
-              <Button 
-                onClick={handleBackToHome}
-                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
-              >
-                Ir para Cards
-              </Button>
+              {!selectedPillar && !selectedDate && !searchTerm && (
+                <Button 
+                  onClick={handleBackToHome}
+                  className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Ir para Cards
+                </Button>
+              )}
             </Card>
           ) : (
             <div className="space-y-8">

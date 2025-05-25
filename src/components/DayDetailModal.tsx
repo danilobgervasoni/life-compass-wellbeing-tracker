@@ -1,7 +1,8 @@
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, Calendar } from "lucide-react";
+import { X, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Pillar } from "@/types/pillar";
 
 interface DayDetailModalProps {
@@ -11,6 +12,8 @@ interface DayDetailModalProps {
 }
 
 export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) => {
+  const [expandedPillar, setExpandedPillar] = useState<string | null>(null);
+
   // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -39,6 +42,12 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
 
   const dayEntries = getDayEntries();
   const hasAnyEntries = dayEntries.some(item => item.entry !== null);
+
+  const handlePillarClick = (pillarId: string, hasEntry: boolean, hasNotes: boolean) => {
+    if (hasEntry && hasNotes) {
+      setExpandedPillar(expandedPillar === pillarId ? null : pillarId);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -78,71 +87,82 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
                   Notas dos Pilares
                 </h3>
                 <div className="grid gap-3">
-                  {dayEntries.map(({ pillar, entry }) => (
-                    <div
-                      key={pillar.id}
-                      className={`
-                        flex items-center justify-between p-3 rounded-lg border
-                        ${entry ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}
-                      `}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{pillar.icon}</span>
-                        <span className="font-medium text-slate-800">
-                          {pillar.name}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        {entry ? (
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg font-bold text-emerald-700">
-                              {entry.score}
+                  {dayEntries.map(({ pillar, entry }) => {
+                    const hasNotes = entry && entry.notes.trim() !== '';
+                    const isExpanded = expandedPillar === pillar.id;
+                    const isClickable = entry && hasNotes;
+
+                    return (
+                      <div key={pillar.id} className="space-y-2">
+                        <div
+                          className={`
+                            flex items-center justify-between p-3 rounded-lg border
+                            ${entry ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}
+                            ${isClickable ? 'cursor-pointer hover:bg-emerald-100' : ''}
+                            transition-colors duration-200
+                          `}
+                          onClick={() => handlePillarClick(pillar.id, !!entry, !!hasNotes)}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">{pillar.icon}</span>
+                            <span className="font-medium text-slate-800">
+                              {pillar.name}
                             </span>
-                            <span className="text-sm text-slate-500">/10</span>
                           </div>
-                        ) : (
-                          <span className="text-sm text-slate-400">
-                            Sem registro
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            {entry ? (
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg font-bold text-emerald-700">
+                                  {entry.score}
+                                </span>
+                                <span className="text-sm text-slate-500">/10</span>
+                                {hasNotes && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="p-1 h-6 w-6"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronUp className="h-4 w-4 text-emerald-600" />
+                                    ) : (
+                                      <ChevronDown className="h-4 w-4 text-emerald-600" />
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-slate-400">
+                                Sem registro
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Expanded annotation */}
+                        {isExpanded && hasNotes && (
+                          <div className="ml-6 p-4 bg-white border border-emerald-200 rounded-lg shadow-sm">
+                            <h4 className="text-sm font-medium text-slate-800 mb-2">
+                              Anotação do dia {new Date(date).getDate()} – {pillar.name}
+                            </h4>
+                            <p className="text-slate-700 text-sm leading-relaxed">
+                              {entry?.notes}
+                            </p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Notes/Reflections */}
-              <div>
-                <h3 className="text-lg font-medium text-slate-800 mb-4">
-                  Reflexões do Dia
-                </h3>
-                <div className="space-y-2">
-                  {dayEntries
-                    .filter(({ entry }) => entry && entry.notes.trim() !== '')
-                    .map(({ pillar, entry }) => (
-                      <div
-                        key={`${pillar.id}-notes`}
-                        className="p-4 bg-slate-50 rounded-lg border border-slate-200"
-                      >
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-lg">{pillar.icon}</span>
-                          <span className="font-medium text-slate-700 text-sm">
-                            {pillar.name}
-                          </span>
-                        </div>
-                        <p className="text-slate-600 text-sm leading-relaxed">
-                          {entry?.notes}
-                        </p>
-                      </div>
-                    ))}
-                  
-                  {dayEntries.filter(({ entry }) => entry && entry.notes.trim() !== '').length === 0 && (
-                    <p className="text-slate-500 text-sm italic">
-                      Nenhuma reflexão registrada neste dia.
-                    </p>
-                  )}
+              {/* Summary section for notes */}
+              {dayEntries.some(({ entry }) => entry && entry.notes.trim() !== '') && (
+                <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-slate-600 text-sm text-center">
+                    💡 Clique em um pilar com anotação para expandir os detalhes
+                  </p>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>

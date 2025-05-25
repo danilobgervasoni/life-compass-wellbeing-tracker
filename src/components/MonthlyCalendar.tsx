@@ -1,5 +1,5 @@
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Calendar } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { DailyEntry } from "@/types/pillar";
@@ -11,6 +11,7 @@ interface MonthlyCalendarProps {
 }
 
 export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCalendarProps) => {
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
@@ -23,11 +24,11 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
 
   // Create a map of dates to scores for quick lookup
   const scoresMap = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, DailyEntry>();
     entries.forEach(entry => {
       const entryDate = new Date(entry.date);
       if (entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
-        map.set(entry.date, entry.score);
+        map.set(entry.date, entry);
       }
     });
     return map;
@@ -61,6 +62,23 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push(day);
   }
+
+  const handleDayClick = (day: number) => {
+    const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const entry = scoresMap.get(dateString);
+    
+    if (entry) {
+      setSelectedDay(selectedDay === day ? null : day);
+    }
+  };
+
+  const getSelectedDayEntry = () => {
+    if (!selectedDay) return null;
+    const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    return scoresMap.get(dateString);
+  };
+
+  const selectedEntry = getSelectedDayEntry();
 
   return (
     <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
@@ -113,18 +131,24 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
           }
 
           const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const score = scoresMap.get(dateString);
+          const entry = scoresMap.get(dateString);
+          const score = entry?.score;
           const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+          const isSelected = selectedDay === day;
 
           return (
-            <div
+            <button
               key={day}
+              onClick={() => handleDayClick(day)}
               className={`
                 aspect-square flex items-center justify-center rounded-lg text-xs sm:text-sm font-medium
                 transition-all duration-200 hover:scale-105
                 ${getScoreColor(score)}
                 ${isToday ? 'ring-2 ring-emerald-600 ring-offset-1' : ''}
+                ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
+                ${entry ? 'cursor-pointer' : 'cursor-default'}
               `}
+              disabled={!entry}
             >
               <div className="text-center">
                 <div className="text-xs opacity-75">{day}</div>
@@ -132,10 +156,28 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
                   <div className="text-xs font-bold">{score}</div>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
+
+      {/* Selected Day Annotation */}
+      {selectedDay && (
+        <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+          <h4 className="text-lg font-semibold text-slate-800 mb-3">
+            Anotação do dia {selectedDay}
+          </h4>
+          {selectedEntry?.notes && selectedEntry.notes.trim() !== '' ? (
+            <p className="text-slate-700 leading-relaxed">
+              {selectedEntry.notes}
+            </p>
+          ) : (
+            <p className="text-slate-500 italic">
+              Não há anotação para este dia.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Summary */}
       <div className="mt-4 text-center text-sm text-slate-600">
