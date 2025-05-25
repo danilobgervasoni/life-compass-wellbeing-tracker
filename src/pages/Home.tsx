@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,8 +16,7 @@ const Home = () => {
   };
 
   const handleNavigateToCalendar = () => {
-    // For now, navigate to cards - calendar can be implemented later
-    navigate("/cards");
+    navigate("/calendar");
   };
 
   return (
