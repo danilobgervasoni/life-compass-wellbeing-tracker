@@ -1,13 +1,15 @@
 
 import { useState, useMemo } from "react";
-import { Calendar, Edit3, Save, Edit } from "lucide-react";
+import { Calendar, Edit3, Save, Edit, BarChart3, CalendarDays } from "lucide-react";
 import { Pillar, DailyEntry } from "@/types/pillar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PillarChart } from "@/components/PillarChart";
+import { MonthlyCalendar } from "@/components/MonthlyCalendar";
 
 interface PillarDetailProps {
   pillar: Pillar;
@@ -94,28 +96,6 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-white">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex space-x-2">
-            <Button
-              variant={timeframe === 'week' ? 'default' : 'outline'}
-              onClick={() => setTimeframe('week')}
-              size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Semana
-            </Button>
-            <Button
-              variant={timeframe === 'month' ? 'default' : 'outline'}
-              onClick={() => setTimeframe('month')}
-              size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Mês
-            </Button>
-          </div>
-        </div>
-
         {/* Pillar Header */}
         <div className="text-center mb-8">
           <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-r ${pillar.color} flex items-center justify-center text-3xl sm:text-4xl shadow-xl mx-auto mb-4`}>
@@ -133,22 +113,63 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
-          {/* Chart */}
+          {/* Chart and Calendar Tabs */}
           <div className="lg:col-span-2">
-            <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5 text-slate-600" />
-                  <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
-                    Progresso ao Longo do Tempo
-                  </h2>
-                </div>
-                <div className="text-emerald-700 font-semibold text-sm sm:text-base">
-                  Média do mês: {monthlyAverage.toFixed(1)}
-                </div>
-              </div>
-              <PillarChart entries={filteredEntries} color={pillar.color} />
-            </Card>
+            <Tabs defaultValue="chart" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="chart" className="flex items-center space-x-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span>Gráfico</span>
+                </TabsTrigger>
+                <TabsTrigger value="calendar" className="flex items-center space-x-2">
+                  <CalendarDays className="h-4 w-4" />
+                  <span>Calendário</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="chart">
+                <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-5 w-5 text-slate-600" />
+                      <h2 className="text-lg sm:text-xl font-semibold text-slate-800">
+                        Progresso ao Longo do Tempo
+                      </h2>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant={timeframe === 'week' ? 'default' : 'outline'}
+                        onClick={() => setTimeframe('week')}
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        Semana
+                      </Button>
+                      <Button
+                        variant={timeframe === 'month' ? 'default' : 'outline'}
+                        onClick={() => setTimeframe('month')}
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        Mês
+                      </Button>
+                    </div>
+                  </div>
+                  <PillarChart entries={filteredEntries} color={pillar.color} />
+                  <div className="text-emerald-700 font-semibold text-sm sm:text-base mt-4 text-center">
+                    Média do mês: {monthlyAverage.toFixed(1)}
+                  </div>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="calendar">
+                <MonthlyCalendar 
+                  entries={pillarEntries} 
+                  pillarName={pillar.name}
+                  pillarColor={pillar.color}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Score Input & Stats */}
