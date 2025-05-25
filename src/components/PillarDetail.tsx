@@ -1,6 +1,5 @@
-
 import { useState, useMemo } from "react";
-import { Calendar, Edit3, Save, Edit, BarChart3, CalendarDays } from "lucide-react";
+import { Calendar, Edit3, Save, Edit, BarChart3, CalendarDays, ArrowLeft } from "lucide-react";
 import { Pillar, DailyEntry } from "@/types/pillar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,14 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PillarChart } from "@/components/PillarChart";
 import { MonthlyCalendar } from "@/components/MonthlyCalendar";
+import { Header } from "@/components/Header";
 
 interface PillarDetailProps {
   pillar: Pillar;
   onBack: () => void;
+  onScoreUpdate?: (pillarId: string, newScore: number, notes?: string) => void;
 }
 
-export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
-  const [timeframe, setTimeframe] = useState<'week' | 'month'>('month');
+export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProps) => {
+  const [timeframe, setTimeframe] = useState<'week' | 'month'>('week');
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(pillar.entries[pillar.entries.length - 1]?.notes || "");
   const [todayScore, setTodayScore] = useState<number | string>("");
@@ -72,6 +73,11 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
       
       setPillarEntries(updatedEntries);
       setIsEditingScore(false);
+      
+      if (onScoreUpdate) {
+        onScoreUpdate(pillar.id, scoreValue, notes);
+      }
+      
       console.log(`Pontuação salva para ${pillar.name}: ${scoreValue}`);
     }
   };
@@ -95,7 +101,12 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-white">
-      <div className="container mx-auto px-4 py-8">
+      <Header 
+        showBackButton={true}
+        onBackToHome={onBack}
+      />
+      
+      <div className="container mx-auto px-4 py-8 pt-24">
         {/* Pillar Header */}
         <div className="text-center mb-8">
           <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-r ${pillar.color} flex items-center justify-center text-3xl sm:text-4xl shadow-xl mx-auto mb-4`}>
@@ -141,17 +152,25 @@ export const PillarDetail = ({ pillar, onBack }: PillarDetailProps) => {
                         variant={timeframe === 'week' ? 'default' : 'outline'}
                         onClick={() => setTimeframe('week')}
                         size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700"
+                        className={`transition-all ${
+                          timeframe === 'week' 
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                            : 'bg-gray-200 hover:bg-gray-300 text-black border-gray-300'
+                        }`}
                       >
-                        Semana
+                        Semanal
                       </Button>
                       <Button
                         variant={timeframe === 'month' ? 'default' : 'outline'}
                         onClick={() => setTimeframe('month')}
                         size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700"
+                        className={`transition-all ${
+                          timeframe === 'month' 
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                            : 'bg-gray-200 hover:bg-gray-300 text-black border-gray-300'
+                        }`}
                       >
-                        Mês
+                        Mensal
                       </Button>
                     </div>
                   </div>
