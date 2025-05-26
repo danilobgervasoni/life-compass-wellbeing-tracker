@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { mockPillars } from "@/data/mockData";
+import { useCards } from "@/hooks/useCards";
 import { DayDetailModal } from "@/components/DayDetailModal";
 
 const Calendar = () => {
@@ -13,6 +13,7 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const { cards, loading } = useCards();
 
   const today = new Date();
   
@@ -25,7 +26,7 @@ const Calendar = () => {
   // Create a map of dates with any entries across all pillars
   const getDaysWithEntries = () => {
     const datesWithEntries = new Set<string>();
-    mockPillars.forEach(pillar => {
+    cards.forEach(pillar => {
       pillar.entries.forEach(entry => {
         const entryDate = new Date(entry.date);
         if (entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
@@ -93,6 +94,17 @@ const Calendar = () => {
       }
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-warmGray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-sage-600 mx-auto"></div>
+          <p className="mt-4 text-warmGray-600">Carregando calendário...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-warmGray-50">
@@ -196,7 +208,7 @@ const Calendar = () => {
           {selectedDate && (
             <DayDetailModal
               date={selectedDate}
-              pillars={mockPillars}
+              pillars={cards}
               onClose={() => setSelectedDate(null)}
             />
           )}

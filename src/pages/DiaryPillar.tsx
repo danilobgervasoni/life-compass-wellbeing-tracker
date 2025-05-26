@@ -3,11 +3,11 @@ import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { diaryPillars, mockDiaryEntries } from "@/data/diaryMockData";
 import { DollarSign, Heart, Clock, Users, BookOpen, Activity, Coffee, Edit, Star, ChevronDown, ChevronUp, Save, Calendar } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { DiaryEntry } from "@/types/diary";
+import { useState, useEffect } from "react";
+import { useCards } from "@/hooks/useCards";
+import { useDiary } from "@/hooks/useDiary";
 
 const DiaryPillar = () => {
   const { pillarId } = useParams();
@@ -15,29 +15,56 @@ const DiaryPillar = () => {
   const [currentReflection, setCurrentReflection] = useState("");
   const [actionPlan, setActionPlan] = useState("");
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const pillar = diaryPillars.find(p => p.id === pillarId);
-  const entries = mockDiaryEntries.filter(entry => entry.pillarId === pillarId);
+  const { cards, loading: cardsLoading } = useCards();
+  const { entries, loading: diaryLoading, saveEntry } = useDiary(pillarId);
+
+  const pillar = cards.find(p => p.id === pillarId);
+
+  useEffect(() => {
+    if (!pillar && !cardsLoading) {
+      navigate("/diary");
+    }
+  }, [pillar, cardsLoading, navigate]);
+
+  if (cardsLoading || diaryLoading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-neutral-600">Carregando diário...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!pillar) {
-    return <div>Pilar não encontrado</div>;
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-neutral-600 mb-4">Pilar não encontrado</p>
+          <Button onClick={() => navigate("/diary")}>Voltar ao Diário</Button>
+        </div>
+      </div>
+    );
   }
 
   const getPillarIcon = (iconName: string) => {
     switch (iconName) {
-      case 'DollarSign':
+      case '💰':
         return <DollarSign className="h-6 w-6 text-white" />;
-      case 'Heart':
+      case '❤️':
         return <Heart className="h-6 w-6 text-white" />;
-      case 'Clock':
+      case '⏰':
         return <Clock className="h-6 w-6 text-white" />;
-      case 'Users':
+      case '👥':
         return <Users className="h-6 w-6 text-white" />;
-      case 'BookOpen':
+      case '📚':
         return <BookOpen className="h-6 w-6 text-white" />;
-      case 'Activity':
+      case '💪':
         return <Activity className="h-6 w-6 text-white" />;
-      case 'Coffee':
+      case '🕊️':
         return <Coffee className="h-6 w-6 text-white" />;
       default:
         return <Heart className="h-6 w-6 text-white" />;
@@ -45,30 +72,28 @@ const DiaryPillar = () => {
   };
 
   const getGradientClass = (color: string) => {
-    switch (color) {
-      case 'emerald':
-        return "bg-gradient-to-br from-emerald-500 to-emerald-600";
-      case 'purple':
-        return "bg-gradient-to-br from-purple-500 to-purple-600";
-      case 'blue':
-        return "bg-gradient-to-br from-blue-500 to-blue-600";
-      case 'pink':
-        return "bg-gradient-to-br from-pink-500 to-pink-600";
-      case 'indigo':
-        return "bg-gradient-to-br from-indigo-500 to-indigo-600";
-      case 'green':
-        return "bg-gradient-to-br from-green-500 to-green-600";
-      case 'orange':
-        return "bg-gradient-to-br from-orange-500 to-orange-600";
-      default:
-        return "bg-gradient-to-br from-emerald-500 to-emerald-600";
-    }
+    if (color.includes('emerald')) return "bg-gradient-to-br from-emerald-500 to-emerald-600";
+    if (color.includes('purple')) return "bg-gradient-to-br from-purple-500 to-purple-600";
+    if (color.includes('blue')) return "bg-gradient-to-br from-blue-500 to-blue-600";
+    if (color.includes('pink')) return "bg-gradient-to-br from-pink-500 to-pink-600";
+    if (color.includes('indigo')) return "bg-gradient-to-br from-indigo-500 to-indigo-600";
+    if (color.includes('green')) return "bg-gradient-to-br from-green-500 to-green-600";
+    return "bg-gradient-to-br from-emerald-500 to-emerald-600";
   };
 
-  const handleSave = () => {
-    console.log("Saving entry:", { currentReflection, actionPlan });
-    setCurrentReflection("");
-    setActionPlan("");
+  const handleSave = async () => {
+    if (!pillarId || (!currentReflection.trim() && !actionPlan.trim())) return;
+
+    try {
+      setSaving(true);
+      await saveEntry(pillarId, currentReflection, actionPlan);
+      setCurrentReflection("");
+      setActionPlan("");
+    } catch (error) {
+      console.error('Erro ao salvar entrada:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -113,7 +138,7 @@ const DiaryPillar = () => {
                     Reflexão Atual
                   </label>
                   <Textarea
-                    placeholder={pillar.reflectionPlaceholder}
+                    placeholder="Como está este pilar da sua vida atualmente? O que você tem observado?"
                     value={currentReflection}
                     onChange={(e) => setCurrentReflection(e.target.value)}
                     className="min-h-[120px] resize-none border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl"
@@ -125,7 +150,7 @@ const DiaryPillar = () => {
                     Plano de Ação
                   </label>
                   <Textarea
-                    placeholder={pillar.actionPlanPlaceholder}
+                    placeholder="Quais ações você vai tomar para melhorar este pilar?"
                     value={actionPlan}
                     onChange={(e) => setActionPlan(e.target.value)}
                     className="min-h-[120px] resize-none border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl"
@@ -134,11 +159,11 @@ const DiaryPillar = () => {
 
                 <Button 
                   onClick={handleSave}
-                  disabled={!currentReflection.trim() && !actionPlan.trim()}
+                  disabled={(!currentReflection.trim() && !actionPlan.trim()) || saving}
                   className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl transition-all duration-200"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  Salvar Reflexão
+                  {saving ? 'Salvando...' : 'Salvar Reflexão'}
                 </Button>
               </div>
             </div>
@@ -159,7 +184,7 @@ const DiaryPillar = () => {
                       <div className="flex items-center space-x-3">
                         <Calendar className="h-4 w-4 text-neutral-500" />
                         <span className="text-sm font-medium text-neutral-600">
-                          {formatDate(entry.date)}
+                          {formatDate(entry.data)}
                         </span>
                       </div>
                       
@@ -170,7 +195,7 @@ const DiaryPillar = () => {
                           onClick={() => toggleFavorite(entry.id)}
                           className="text-neutral-500 hover:text-yellow-500 p-1"
                         >
-                          <Star className={`h-4 w-4 ${entry.isFavorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                          <Star className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -198,14 +223,14 @@ const DiaryPillar = () => {
                       <div>
                         <h4 className="text-sm font-medium text-neutral-700 mb-1">Reflexão:</h4>
                         <p className="text-sm text-neutral-600 line-clamp-2">
-                          {entry.currentReflection}
+                          {entry.reflexao_geral}
                         </p>
                       </div>
                       
                       <div>
                         <h4 className="text-sm font-medium text-neutral-700 mb-1">Plano de Ação:</h4>
                         <p className="text-sm text-neutral-600 line-clamp-2">
-                          {entry.actionPlan}
+                          {entry.plano_acao}
                         </p>
                       </div>
                     </div>
@@ -216,14 +241,14 @@ const DiaryPillar = () => {
                         <div>
                           <h4 className="text-sm font-semibold text-neutral-800 mb-2">Reflexão Completa:</h4>
                           <p className="text-sm text-neutral-700 leading-relaxed">
-                            {entry.currentReflection}
+                            {entry.reflexao_geral}
                           </p>
                         </div>
                         
                         <div>
                           <h4 className="text-sm font-semibold text-neutral-800 mb-2">Plano de Ação Completo:</h4>
                           <p className="text-sm text-neutral-700 leading-relaxed">
-                            {entry.actionPlan}
+                            {entry.plano_acao}
                           </p>
                         </div>
                       </div>

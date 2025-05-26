@@ -1,28 +1,29 @@
 
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
-import { diaryPillars } from "@/data/diaryMockData";
 import { DollarSign, Heart, Clock, Users, BookOpen, Activity, Coffee } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useCards } from "@/hooks/useCards";
 
 const Diary = () => {
   const navigate = useNavigate();
+  const { cards, loading, error } = useCards();
 
   const getPillarIcon = (iconName: string) => {
     switch (iconName) {
-      case 'DollarSign':
+      case '💰':
         return <DollarSign className="h-8 w-8 text-white" />;
-      case 'Heart':
+      case '❤️':
         return <Heart className="h-8 w-8 text-white" />;
-      case 'Clock':
+      case '⏰':
         return <Clock className="h-8 w-8 text-white" />;
-      case 'Users':
+      case '👥':
         return <Users className="h-8 w-8 text-white" />;
-      case 'BookOpen':
+      case '📚':
         return <BookOpen className="h-8 w-8 text-white" />;
-      case 'Activity':
+      case '💪':
         return <Activity className="h-8 w-8 text-white" />;
-      case 'Coffee':
+      case '🕊️':
         return <Coffee className="h-8 w-8 text-white" />;
       default:
         return <Heart className="h-8 w-8 text-white" />;
@@ -30,25 +31,35 @@ const Diary = () => {
   };
 
   const getGradientClass = (color: string) => {
-    switch (color) {
-      case 'emerald':
-        return "bg-gradient-to-br from-sage-500 to-sage-600";
-      case 'purple':
-        return "bg-gradient-to-br from-purple-500 to-purple-600";
-      case 'blue':
-        return "bg-gradient-to-br from-petroleum-500 to-petroleum-600";
-      case 'pink':
-        return "bg-gradient-to-br from-terracotta-500 to-terracotta-600";
-      case 'indigo':
-        return "bg-gradient-to-br from-indigo-500 to-indigo-600";
-      case 'green':
-        return "bg-gradient-to-br from-sage-500 to-sage-600";
-      case 'orange':
-        return "bg-gradient-to-br from-terracotta-500 to-terracotta-600";
-      default:
-        return "bg-gradient-to-br from-sage-500 to-sage-600";
-    }
+    if (color.includes('emerald')) return "bg-gradient-to-br from-sage-500 to-sage-600";
+    if (color.includes('purple')) return "bg-gradient-to-br from-purple-500 to-purple-600";
+    if (color.includes('blue')) return "bg-gradient-to-br from-petroleum-500 to-petroleum-600";
+    if (color.includes('pink')) return "bg-gradient-to-br from-terracotta-500 to-terracotta-600";
+    if (color.includes('indigo')) return "bg-gradient-to-br from-indigo-500 to-indigo-600";
+    if (color.includes('green')) return "bg-gradient-to-br from-sage-500 to-sage-600";
+    return "bg-gradient-to-br from-sage-500 to-sage-600";
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-warmGray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-sage-600 mx-auto"></div>
+          <p className="mt-4 text-warmGray-600">Carregando diário...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-warmGray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Erro ao carregar dados: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-warmGray-50">
@@ -68,7 +79,7 @@ const Diary = () => {
 
           {/* Pillars Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {diaryPillars.map((pillar) => (
+            {cards.map((pillar) => (
               <Card 
                 key={pillar.id}
                 className="group cursor-pointer transition-all duration-300 hover:shadow-soft hover:scale-105 bg-white border-0 shadow-soft overflow-hidden"

@@ -22,26 +22,35 @@ interface PillarDetailProps {
 export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProps) => {
   const [timeframe, setTimeframe] = useState<'week' | 'month'>('week');
   const [editingNotes, setEditingNotes] = useState(false);
-  const [notes, setNotes] = useState(pillar.entries[pillar.entries.length - 1]?.notes || "");
+  const [notes, setNotes] = useState("");
   const [todayScore, setTodayScore] = useState<number | string>("");
-  const [pillarEntries, setPillarEntries] = useState<DailyEntry[]>(pillar.entries);
   const [isEditingScore, setIsEditingScore] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
   // Check if today's score already exists
-  const todayEntry = pillarEntries.find(entry => entry.date === today);
+  const todayEntry = pillar.entries.find(entry => entry.date === today);
+  
+  // Initialize states based on today's entry
+  useState(() => {
+    if (todayEntry) {
+      setNotes(todayEntry.notes || "");
+      setTodayScore(todayEntry.score);
+    }
+  });
+
   const displayScore = todayEntry ? todayEntry.score : todayScore;
 
   // Filter entries for current month only
   const currentMonthEntries = useMemo(() => {
-    return pillarEntries.filter(entry => {
+    return pillar.entries.filter(entry => {
       const entryDate = new Date(entry.date);
       return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
     });
-  }, [pillarEntries, currentMonth, currentYear]);
+  }, [pillar.entries, currentMonth, currentYear]);
 
   // Calculate monthly average
   const monthlyAverage = currentMonthEntries.length > 0 
@@ -65,9 +74,9 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
         return <Users className="h-8 w-8 text-white" />;
       case '📚':
         return <BookOpen className="h-8 w-8 text-white" />;
-      case '🏃':
+      case '💪':
         return <Activity className="h-8 w-8 text-white" />;
-      case '☕':
+      case '🕊️':
         return <Coffee className="h-8 w-8 text-white" />;
       default:
         return <Heart className="h-8 w-8 text-white" />;
@@ -81,34 +90,26 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     }
   };
 
-  const handleSaveScore = () => {
-    if (todayScore !== "" && !isNaN(Number(todayScore))) {
-      const scoreValue = Number(todayScore);
-      const newEntry: DailyEntry = {
-        date: today,
-        score: scoreValue,
-        notes: notes
-      };
-
-      // Update entries - either add new or update existing
-      const updatedEntries = pillarEntries.filter(entry => entry.date !== today);
-      updatedEntries.push(newEntry);
-      updatedEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
-      setPillarEntries(updatedEntries);
-      setIsEditingScore(false);
-      
-      if (onScoreUpdate) {
-        onScoreUpdate(pillar.id, scoreValue, notes);
+  const handleSaveScore = async () => {
+    if (todayScore !== "" && !isNaN(Number(todayScore)) && onScoreUpdate) {
+      try {
+        setSaving(true);
+        const scoreValue = Number(todayScore);
+        await onScoreUpdate(pillar.id, scoreValue, notes);
+        setIsEditingScore(false);
+        console.log(`Pontuação salva para ${pillar.name}: ${scoreValue}`);
+      } catch (error) {
+        console.error('Erro ao salvar pontuação:', error);
+      } finally {
+        setSaving(false);
       }
-      
-      console.log(`Pontuação salva para ${pillar.name}: ${scoreValue}`);
     }
   };
 
   const handleEditScore = () => {
     if (todayEntry) {
       setTodayScore(todayEntry.score);
+      setNotes(todayEntry.notes || "");
       setIsEditingScore(true);
     }
   };
@@ -207,7 +208,7 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
               
               <TabsContent value="calendar">
                 <MonthlyCalendar 
-                  entries={pillarEntries} 
+                  entries={pillar.entries} 
                   pillarName={pillar.name}
                   pillarColor={pillar.color}
                 />
@@ -236,13 +237,23 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
                       disabled={todayEntry && !isEditingScore}
                     />
                     {!todayEntry && todayScore !== "" && !isEditingScore && (
-                      <Button onClick={handleSaveScore} size="sm" className="bg-sage-600 hover:bg-sage-700 shrink-0">
-                        Salvar
+                      <Button 
+                        onClick={handleSaveScore} 
+                        size="sm" 
+                        className="bg-sage-600 hover:bg-sage-700 shrink-0"
+                        disabled={saving}
+                      >
+                        {saving ? 'Salvando...' : 'Salvar'}
                       </Button>
                     )}
                     {isEditingScore && (
-                      <Button onClick={handleSaveScore} size="sm" className="bg-sage-600 hover:bg-sage-700 shrink-0">
-                        Salvar
+                      <Button 
+                        onClick={handleSaveScore} 
+                        size="sm" 
+                        className="bg-sage-600 hover:bg-sage-700 shrink-0"
+                        disabled={saving}
+                      >
+                        {saving ? 'Salvando...' : 'Salvar'}
                       </Button>
                     )}
                   </div>

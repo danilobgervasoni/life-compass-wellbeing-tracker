@@ -3,14 +3,16 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { PillarCard } from "@/components/PillarCard";
 import { PillarDetail } from "@/components/PillarDetail";
-import { mockPillars } from "@/data/mockData";
 import { Pillar } from "@/types/pillar";
 import { useNavigate } from "react-router-dom";
+import { useCards } from "@/hooks/useCards";
+import { useScoreUpdate } from "@/hooks/useScoreUpdate";
 
 const Cards = () => {
   const navigate = useNavigate();
   const [selectedPillar, setSelectedPillar] = useState<Pillar | null>(null);
-  const [pillars, setPillars] = useState(mockPillars);
+  const { cards, loading, error, refetch } = useCards();
+  const { updateScore } = useScoreUpdate();
 
   const handleSelectPillar = (pillar: Pillar) => {
     setSelectedPillar(pillar);
@@ -32,34 +34,44 @@ const Cards = () => {
     navigate("/calendar");
   };
 
-  const handleScoreUpdate = (pillarId: string, newScore: number, notes?: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    
-    setPillars(prevPillars => 
-      prevPillars.map(pillar => {
-        if (pillar.id === pillarId) {
-          const updatedEntries = [...pillar.entries];
-          const todayEntryIndex = updatedEntries.findIndex(entry => entry.date === today);
-          
-          if (todayEntryIndex >= 0) {
-            updatedEntries[todayEntryIndex] = { ...updatedEntries[todayEntryIndex], score: newScore, notes: notes || '' };
-          } else {
-            updatedEntries.push({ date: today, score: newScore, notes: notes || '' });
-          }
-          
-          return {
-            ...pillar,
-            currentScore: newScore,
-            entries: updatedEntries
-          };
-        }
-        return pillar;
-      })
-    );
+  const handleScoreUpdate = async (pillarId: string, newScore: number, notes?: string) => {
+    try {
+      await updateScore(pillarId, newScore, notes);
+      await refetch();
+    } catch (error) {
+      console.error('Erro ao atualizar pontuação:', error);
+    }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-warmGray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-sage-600 mx-auto"></div>
+          <p className="mt-4 text-warmGray-600">Carregando pilares...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-warmGray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Erro ao carregar dados: {error}</p>
+          <button 
+            onClick={refetch}
+            className="bg-sage-600 text-white px-4 py-2 rounded-lg hover:bg-sage-700"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (selectedPillar) {
-    const updatedPillar = pillars.find(p => p.id === selectedPillar.id) || selectedPillar;
+    const updatedPillar = cards.find(p => p.id === selectedPillar.id) || selectedPillar;
     return (
       <PillarDetail 
         pillar={updatedPillar} 
@@ -93,7 +105,7 @@ const Cards = () => {
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {pillars.map((pillar) => (
+            {cards.map((pillar) => (
               <PillarCard
                 key={pillar.id}
                 pillar={pillar}

@@ -9,7 +9,138 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      cards: {
+        Row: {
+          categoria: string
+          created_at: string
+          icone: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          icone: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          icone?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      diario: {
+        Row: {
+          card_id: string
+          created_at: string
+          data: string
+          id: string
+          plano_acao: string
+          reflexao_geral: string
+          updated_at: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          data: string
+          id?: string
+          plano_acao: string
+          reflexao_geral: string
+          updated_at?: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          plano_acao?: string
+          reflexao_geral?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diario_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas: {
+        Row: {
+          anotacao: string | null
+          card_id: string
+          created_at: string
+          data: string
+          id: string
+          nota: number
+          updated_at: string
+        }
+        Insert: {
+          anotacao?: string | null
+          card_id: string
+          created_at?: string
+          data: string
+          id?: string
+          nota: number
+          updated_at?: string
+        }
+        Update: {
+          anotacao?: string | null
+          card_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          nota?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reflexoes: {
+        Row: {
+          card_id: string
+          created_at: string
+          data: string
+          id: string
+          texto: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          data: string
+          id?: string
+          texto: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reflexoes_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
