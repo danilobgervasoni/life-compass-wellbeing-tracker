@@ -32,36 +32,36 @@ const Diary = () => {
   const getGradientClass = (color: string) => {
     switch (color) {
       case 'emerald':
-        return "bg-gradient-to-br from-emerald-500 to-emerald-600";
+        return "bg-gradient-to-br from-sage-500 to-sage-600";
       case 'purple':
         return "bg-gradient-to-br from-purple-500 to-purple-600";
       case 'blue':
-        return "bg-gradient-to-br from-blue-500 to-blue-600";
+        return "bg-gradient-to-br from-petroleum-500 to-petroleum-600";
       case 'pink':
-        return "bg-gradient-to-br from-pink-500 to-pink-600";
+        return "bg-gradient-to-br from-terracotta-500 to-terracotta-600";
       case 'indigo':
         return "bg-gradient-to-br from-indigo-500 to-indigo-600";
       case 'green':
-        return "bg-gradient-to-br from-green-500 to-green-600";
+        return "bg-gradient-to-br from-sage-500 to-sage-600";
       case 'orange':
-        return "bg-gradient-to-br from-orange-500 to-orange-600";
+        return "bg-gradient-to-br from-terracotta-500 to-terracotta-600";
       default:
-        return "bg-gradient-to-br from-emerald-500 to-emerald-600";
+        return "bg-gradient-to-br from-sage-500 to-sage-600";
     }
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-warmGray-50">
       <Header />
       
-      <div className="pt-20 pb-8 px-4">
+      <div className="pt-24 pb-8 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Page Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-neutral-900 mb-4">
+            <h1 className="text-4xl font-bold text-warmGray-900 mb-4">
               Diário Estratégico
             </h1>
-            <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+            <p className="text-lg text-warmGray-600 max-w-2xl mx-auto">
               Um espaço dedicado para reflexões profundas e planejamento de ações sobre cada pilar da sua vida
             </p>
           </div>
@@ -71,20 +71,20 @@ const Diary = () => {
             {diaryPillars.map((pillar) => (
               <Card 
                 key={pillar.id}
-                className="group cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 bg-white border-0 shadow-sm overflow-hidden"
+                className="group cursor-pointer transition-all duration-300 hover:shadow-soft hover:scale-105 bg-white border-0 shadow-soft overflow-hidden"
                 onClick={() => navigate(`/diary/${pillar.id}`)}
               >
                 <div className="p-6">
                   {/* Icon */}
-                  <div className={`w-16 h-16 rounded-2xl ${getGradientClass(pillar.color)} flex items-center justify-center shadow-sm mb-4 group-hover:shadow-md transition-all duration-300`}>
+                  <div className={`w-16 h-16 rounded-2xl ${getGradientClass(pillar.color)} flex items-center justify-center shadow-soft mb-4 group-hover:shadow-md transition-all duration-300`}>
                     {getPillarIcon(pillar.icon)}
                   </div>
 
                   {/* Title & Description */}
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-2 group-hover:text-neutral-800 transition-colors">
+                  <h3 className="text-xl font-semibold text-warmGray-900 mb-2 group-hover:text-warmGray-800 transition-colors">
                     {pillar.name}
                   </h3>
-                  <p className="text-sm text-neutral-600 leading-relaxed">
+                  <p className="text-sm text-warmGray-600 leading-relaxed">
                     {pillar.description}
                   </p>
                 </div>

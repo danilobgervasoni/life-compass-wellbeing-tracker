@@ -10,9 +10,17 @@ interface HeaderProps {
   onNavigateToReflections?: () => void;
   onNavigateToCards?: () => void;
   onNavigateToDiary?: () => void;
+  onNavigateToCalendar?: () => void;
 }
 
-export const Header = ({ onBackToHome, showBackButton = false, onNavigateToReflections, onNavigateToCards, onNavigateToDiary }: HeaderProps) => {
+export const Header = ({ 
+  onBackToHome, 
+  showBackButton = false, 
+  onNavigateToReflections, 
+  onNavigateToCards, 
+  onNavigateToDiary,
+  onNavigateToCalendar 
+}: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,8 +57,16 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
     }
   };
 
+  const handleCalendarClick = () => {
+    if (onNavigateToCalendar) {
+      onNavigateToCalendar();
+    } else {
+      navigate("/calendar");
+    }
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-100 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-warmGray-50/95 backdrop-blur-md border-b border-warmGray-100 shadow-soft">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Left side - Be Rock logo or back button */}
@@ -59,7 +75,7 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
               <Button 
                 variant="ghost" 
                 onClick={handleHomeClick}
-                className="flex items-center space-x-2 text-neutral-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl px-3 py-2 transition-all duration-200"
+                className="flex items-center space-x-2 text-warmGray-600 hover:text-sage-600 hover:bg-sage-50 rounded-xl px-3 py-2 transition-all duration-200"
               >
                 <ArrowLeft className="h-5 w-5" />
                 <span className="hidden sm:inline font-medium">Voltar</span>
@@ -69,8 +85,8 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
                 className="flex items-center cursor-pointer group"
                 onClick={handleHomeClick}
               >
-                <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold text-lg sm:text-xl shadow-sm group-hover:shadow-md transition-all duration-300 transform group-hover:scale-105">
-                  Algoritmo de Governo
+                <div className="bg-gradient-to-r from-sage-500 to-sage-600 text-white px-4 sm:px-6 py-3 rounded-xl font-semibold text-lg sm:text-xl shadow-soft group-hover:shadow-md transition-all duration-300 transform group-hover:scale-105">
+                  Be Rock
                 </div>
               </div>
             )}
@@ -81,8 +97,8 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
             <button 
               className={`font-medium transition-all duration-200 px-4 py-2 rounded-xl ${
                 location.pathname === '/cards' 
-                  ? 'text-emerald-600 bg-emerald-50 shadow-sm' 
-                  : 'text-neutral-700 hover:text-emerald-600 hover:bg-emerald-50'
+                  ? 'text-sage-600 bg-sage-50 shadow-soft' 
+                  : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
               }`}
               onClick={handleCardsClick}
             >
@@ -91,8 +107,8 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
             <button 
               className={`font-medium transition-all duration-200 px-4 py-2 rounded-xl ${
                 location.pathname === '/reflections' 
-                  ? 'text-emerald-600 bg-emerald-50 shadow-sm' 
-                  : 'text-neutral-700 hover:text-emerald-600 hover:bg-emerald-50'
+                  ? 'text-sage-600 bg-sage-50 shadow-soft' 
+                  : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
               }`}
               onClick={handleReflectionsClick}
             >
@@ -101,12 +117,22 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
             <button 
               className={`font-medium transition-all duration-200 px-4 py-2 rounded-xl ${
                 location.pathname === '/diary' || location.pathname.startsWith('/diary/')
-                  ? 'text-emerald-600 bg-emerald-50 shadow-sm' 
-                  : 'text-neutral-700 hover:text-emerald-600 hover:bg-emerald-50'
+                  ? 'text-sage-600 bg-sage-50 shadow-soft' 
+                  : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
               }`}
               onClick={handleDiaryClick}
             >
               Diário
+            </button>
+            <button 
+              className={`font-medium transition-all duration-200 px-4 py-2 rounded-xl ${
+                location.pathname === '/calendar'
+                  ? 'text-sage-600 bg-sage-50 shadow-soft' 
+                  : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
+              }`}
+              onClick={handleCalendarClick}
+            >
+              Calendário
             </button>
           </nav>
 
@@ -116,14 +142,14 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden text-neutral-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all duration-200"
+              className="md:hidden text-warmGray-600 hover:text-sage-600 hover:bg-sage-50 rounded-xl transition-all duration-200"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
 
             {/* Profile icon */}
-            <div className="w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-r from-sage-500 to-sage-600 rounded-xl flex items-center justify-center cursor-pointer shadow-soft hover:shadow-md transition-all duration-300 hover:scale-105">
               <User className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
           </div>
@@ -131,13 +157,13 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
 
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-neutral-100 animate-fade-in">
+          <div className="md:hidden mt-4 pb-4 border-t border-warmGray-100 animate-fade-in">
             <nav className="flex flex-col space-y-2 pt-4">
               <button 
                 className={`font-medium transition-all duration-200 text-left px-4 py-2 rounded-xl ${
                   location.pathname === '/cards' 
-                    ? 'text-emerald-600 bg-emerald-50' 
-                    : 'text-neutral-700 hover:text-emerald-600 hover:bg-emerald-50'
+                    ? 'text-sage-600 bg-sage-50' 
+                    : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
                 }`}
                 onClick={() => {
                   handleCardsClick();
@@ -149,8 +175,8 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
               <button 
                 className={`font-medium transition-all duration-200 text-left px-4 py-2 rounded-xl ${
                   location.pathname === '/reflections' 
-                    ? 'text-emerald-600 bg-emerald-50' 
-                    : 'text-neutral-700 hover:text-emerald-600 hover:bg-emerald-50'
+                    ? 'text-sage-600 bg-sage-50' 
+                    : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
                 }`}
                 onClick={() => {
                   handleReflectionsClick();
@@ -162,8 +188,8 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
               <button 
                 className={`font-medium transition-all duration-200 text-left px-4 py-2 rounded-xl ${
                   location.pathname === '/diary' || location.pathname.startsWith('/diary/')
-                    ? 'text-emerald-600 bg-emerald-50' 
-                    : 'text-neutral-700 hover:text-emerald-600 hover:bg-emerald-50'
+                    ? 'text-sage-600 bg-sage-50' 
+                    : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
                 }`}
                 onClick={() => {
                   handleDiaryClick();
@@ -171,6 +197,19 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
                 }}
               >
                 Diário
+              </button>
+              <button 
+                className={`font-medium transition-all duration-200 text-left px-4 py-2 rounded-xl ${
+                  location.pathname === '/calendar'
+                    ? 'text-sage-600 bg-sage-50' 
+                    : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
+                }`}
+                onClick={() => {
+                  handleCalendarClick();
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Calendário
               </button>
             </nav>
           </div>

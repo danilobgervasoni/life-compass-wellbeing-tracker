@@ -161,6 +161,17 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
         })}
       </div>
 
+      {/* Legend explanation */}
+      <div className="mt-6 p-4 bg-sage-50 rounded-xl border border-sage-100">
+        <p className="text-sm text-warmGray-600 text-center">
+          <span className="font-medium">Como ler:</span> O número no canto superior é o dia do mês. 
+          O número em destaque é a pontuação que você atribuiu ao pilar naquele dia.
+        </p>
+        <p className="text-xs text-warmGray-500 text-center mt-1">
+          Exemplo: "25 <strong>7</strong>" = dia 25, nota 7
+        </p>
+      </div>
+
       {/* Selected Day Annotation */}
       {selectedDay && (
         <div className="mt-6 p-5 bg-sage-50 rounded-xl border border-sage-100 animate-fade-in">
@@ -178,13 +189,6 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
           )}
         </div>
       )}
-
-      {/* Summary */}
-      <div className="mt-6 text-center text-sm text-warmGray-600">
-        <p className="font-medium">
-          Dias com pontuação: {Array.from(scoresMap.values()).length} de {daysInMonth}
-        </p>
-      </div>
     </Card>
   );
 };
