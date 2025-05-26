@@ -1,5 +1,5 @@
 
-import { ArrowLeft, Menu, X } from "lucide-react";
+import { ArrowLeft, Menu, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -41,8 +41,8 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-emerald-200 shadow-sm">
-      <div className="container mx-auto px-4 py-3">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-warmGray-100 shadow-soft">
+      <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Left side - Be Rock logo or back button */}
           <div className="flex items-center">
@@ -50,17 +50,17 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
               <Button 
                 variant="ghost" 
                 onClick={handleHomeClick}
-                className="flex items-center space-x-2 text-slate-600 hover:text-emerald-700"
+                className="flex items-center space-x-2 text-warmGray-600 hover:text-sage-600 hover:bg-sage-50 rounded-lg px-3 py-2 transition-all duration-200"
               >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Voltar</span>
+                <ArrowLeft className="h-5 w-5" />
+                <span className="hidden sm:inline font-medium">Voltar</span>
               </Button>
             ) : (
               <div 
                 className="flex items-center cursor-pointer group"
                 onClick={handleHomeClick}
               >
-                <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-3 sm:px-4 py-2 rounded-lg font-bold text-base sm:text-lg shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+                <div className="gradient-brand text-white px-4 sm:px-6 py-3 rounded-xl font-semibold text-lg sm:text-xl shadow-soft group-hover:shadow-soft-lg transition-all duration-300 transform group-hover:scale-105">
                   Be Rock
                 </div>
               </div>
@@ -68,22 +68,22 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
           </div>
 
           {/* Center - Navigation (Desktop) */}
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center space-x-8">
             <button 
-              className={`font-medium transition-colors ${
+              className={`font-medium transition-all duration-200 px-3 py-2 rounded-lg ${
                 location.pathname === '/cards' 
-                  ? 'text-emerald-700 border-b-2 border-emerald-700' 
-                  : 'text-slate-700 hover:text-emerald-700'
+                  ? 'text-sage-600 bg-sage-50 shadow-soft' 
+                  : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
               }`}
               onClick={handleCardsClick}
             >
               Cards
             </button>
             <button 
-              className={`font-medium transition-colors ${
+              className={`font-medium transition-all duration-200 px-3 py-2 rounded-lg ${
                 location.pathname === '/reflections' 
-                  ? 'text-emerald-700 border-b-2 border-emerald-700' 
-                  : 'text-slate-700 hover:text-emerald-700'
+                  ? 'text-sage-600 bg-sage-50 shadow-soft' 
+                  : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
               }`}
               onClick={handleReflectionsClick}
             >
@@ -92,33 +92,33 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
           </nav>
 
           {/* Right side - Profile icon and mobile menu toggle */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {/* Mobile menu button */}
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="md:hidden text-warmGray-600 hover:text-sage-600 hover:bg-sage-50 rounded-lg transition-all duration-200"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
 
             {/* Profile icon */}
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center cursor-pointer hover:shadow-lg transition-all duration-300">
-              <span className="text-white font-semibold text-xs sm:text-sm">👤</span>
+            <div className="w-10 h-10 sm:w-11 sm:h-11 gradient-brand rounded-xl flex items-center justify-center cursor-pointer shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:scale-105">
+              <User className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
           </div>
         </div>
 
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-emerald-200">
-            <nav className="flex flex-col space-y-3 pt-4">
+          <div className="md:hidden mt-4 pb-4 border-t border-warmGray-100 animate-fade-in">
+            <nav className="flex flex-col space-y-2 pt-4">
               <button 
-                className={`font-medium transition-colors text-left ${
+                className={`font-medium transition-all duration-200 text-left px-3 py-2 rounded-lg ${
                   location.pathname === '/cards' 
-                    ? 'text-emerald-700' 
-                    : 'text-slate-700 hover:text-emerald-700'
+                    ? 'text-sage-600 bg-sage-50' 
+                    : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
                 }`}
                 onClick={() => {
                   handleCardsClick();
@@ -128,10 +128,10 @@ export const Header = ({ onBackToHome, showBackButton = false, onNavigateToRefle
                 Cards
               </button>
               <button 
-                className={`font-medium transition-colors text-left ${
+                className={`font-medium transition-all duration-200 text-left px-3 py-2 rounded-lg ${
                   location.pathname === '/reflections' 
-                    ? 'text-emerald-700' 
-                    : 'text-slate-700 hover:text-emerald-700'
+                    ? 'text-sage-600 bg-sage-50' 
+                    : 'text-warmGray-700 hover:text-sage-600 hover:bg-sage-50'
                 }`}
                 onClick={() => {
                   handleReflectionsClick();
