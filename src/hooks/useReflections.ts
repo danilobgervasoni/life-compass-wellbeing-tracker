@@ -31,7 +31,13 @@ export const useReflections = (cardId?: string) => {
 
       if (error) throw error;
 
-      setReflections(data || []);
+      // Ensure dates are handled in local timezone
+      const processedData = data?.map(item => ({
+        ...item,
+        data: new Date(item.data + 'T00:00:00').toISOString().split('T')[0]
+      })) || [];
+
+      setReflections(processedData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -41,14 +47,16 @@ export const useReflections = (cardId?: string) => {
 
   const saveReflection = async (cardId: string, texto: string) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      // Use local timezone for date
+      const today = new Date();
+      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
       const { data, error } = await supabase
         .from('reflexoes')
         .insert({
           card_id: cardId,
           texto: texto,
-          data: today
+          data: localDate
         })
         .select();
 

@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Calendar, Edit3, Save, Edit, BarChart3, CalendarDays, ArrowLeft } from "lucide-react";
 import { Pillar, DailyEntry } from "@/types/pillar";
@@ -12,6 +11,7 @@ import { PillarChart } from "@/components/PillarChart";
 import { MonthlyCalendar } from "@/components/MonthlyCalendar";
 import { Header } from "@/components/Header";
 import { DollarSign, Heart, Clock, Users, BookOpen, Activity, Coffee } from "lucide-react";
+import { useReflections } from "@/hooks/useReflections";
 
 interface PillarDetailProps {
   pillar: Pillar;
@@ -26,13 +26,16 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
   const [todayScore, setTodayScore] = useState<number | string>("");
   const [isEditingScore, setIsEditingScore] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { saveReflection } = useReflections();
 
-  const today = new Date().toISOString().split('T')[0];
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  // Use local timezone for today
+  const today = new Date();
+  const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
 
   // Check if today's score already exists
-  const todayEntry = pillar.entries.find(entry => entry.date === today);
+  const todayEntry = pillar.entries.find(entry => entry.date === localToday);
   
   // Initialize states based on today's entry
   useState(() => {
@@ -96,6 +99,12 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
         setSaving(true);
         const scoreValue = Number(todayScore);
         await onScoreUpdate(pillar.id, scoreValue, notes);
+        
+        // Also save as reflection if there are notes
+        if (notes.trim()) {
+          await saveReflection(pillar.id, notes);
+        }
+        
         setIsEditingScore(false);
         console.log(`Pontuação salva para ${pillar.name}: ${scoreValue}`);
       } catch (error) {
@@ -114,16 +123,23 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     }
   };
 
+  const handleStartNewEntry = () => {
+    setTodayScore("");
+    setNotes("");
+    setIsEditingScore(true);
+  };
+
   // Handler for calendar date updates
   const handleCalendarScoreUpdate = async (date: string, score: number, notes?: string) => {
     if (onScoreUpdate) {
-      // We need to modify this to handle date-specific updates
-      // For now, we'll update today's score if it's today's date
-      if (date === today) {
+      if (date === localToday) {
         await onScoreUpdate(pillar.id, score, notes);
+        
+        // Also save as reflection if there are notes
+        if (notes && notes.trim()) {
+          await saveReflection(pillar.id, notes);
+        }
       } else {
-        // Here we would need a more specific update function that handles any date
-        // This would require modifying the parent component to handle date-specific updates
         console.log('Calendar update for date:', date, 'score:', score, 'notes:', notes);
       }
     }
@@ -131,7 +147,6 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
 
   // Format today's date in Portuguese
   const formatTodayDate = () => {
-    const today = new Date();
     const months = [
       'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
       'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
@@ -238,67 +253,82 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
             <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
               <h3 className="text-lg font-semibold text-warmGray-800 mb-4">Pontuação de Hoje</h3>
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
-                  <div className="flex space-x-2 mt-2">
-                    <Input
-                      id="score"
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={isEditingScore ? todayScore : (displayScore || "")}
-                      onChange={handleScoreChange}
-                      placeholder="Insira um valor entre 0 e 10"
-                      className="text-center text-xl sm:text-2xl font-bold text-sm"
-                      disabled={todayEntry && !isEditingScore}
-                    />
-                    {!todayEntry && todayScore !== "" && !isEditingScore && (
-                      <Button 
-                        onClick={handleSaveScore} 
-                        size="sm" 
-                        className="bg-sage-600 hover:bg-sage-700 shrink-0"
-                        disabled={saving}
-                      >
-                        {saving ? 'Salvando...' : 'Salvar'}
-                      </Button>
-                    )}
-                    {isEditingScore && (
-                      <Button 
-                        onClick={handleSaveScore} 
-                        size="sm" 
-                        className="bg-sage-600 hover:bg-sage-700 shrink-0"
-                        disabled={saving}
-                      >
-                        {saving ? 'Salvando...' : 'Salvar'}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
-                      {displayScore || "—"}
+                {!todayEntry && !isEditingScore ? (
+                  // No entry exists and not editing - show placeholder
+                  <div>
+                    <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
+                    <div className="flex space-x-2 mt-2">
+                      <Input
+                        id="score"
+                        type="number"
+                        min="0"
+                        max="10"
+                        placeholder="Insira um valor entre 0 e 10"
+                        className="text-center text-xl sm:text-2xl font-bold"
+                        onClick={handleStartNewEntry}
+                        readOnly
+                      />
                     </div>
-                    {todayEntry && !isEditingScore && (
+                  </div>
+                ) : !isEditingScore ? (
+                  // Entry exists and not editing - show score with edit button
+                  <div>
+                    <Label className="text-sm">Pontuação de hoje</Label>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <div className="flex-1 text-center">
+                        <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
+                          {displayScore}
+                        </div>
+                        <div className="text-warmGray-500">de 10</div>
+                      </div>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={handleEditScore}
-                        className="text-warmGray-500 hover:text-sage-700"
+                        className="text-warmGray-600 hover:text-sage-700"
                       >
-                        <Edit className="h-4 w-4" />
-                        <span className="ml-1 text-xs">Editar</span>
+                        <Edit className="h-4 w-4 mr-1" />
+                        Editar
                       </Button>
-                    )}
+                    </div>
                   </div>
-                  <div className="text-warmGray-500">de 10</div>
-                  <div className={`w-full h-3 bg-warmGray-200 rounded-full mt-4 overflow-hidden`}>
-                    <div 
-                      className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-700`}
-                      style={{ width: `${displayScore ? (Number(displayScore) / 10) * 100 : 0}%` }}
-                    />
+                ) : (
+                  // Editing mode - show input field
+                  <div>
+                    <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
+                    <div className="flex space-x-2 mt-2">
+                      <Input
+                        id="score"
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={todayScore}
+                        onChange={handleScoreChange}
+                        placeholder="Insira um valor entre 0 e 10"
+                        className="text-center text-xl sm:text-2xl font-bold"
+                      />
+                      <Button 
+                        onClick={handleSaveScore} 
+                        size="sm" 
+                        className="bg-sage-600 hover:bg-sage-700 shrink-0"
+                        disabled={saving || todayScore === ""}
+                      >
+                        {saving ? 'Salvando...' : 'Salvar'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
+                
+                {isEditingScore && (
+                  <div className="text-center">
+                    <div className={`w-full h-3 bg-warmGray-200 rounded-full mt-4 overflow-hidden`}>
+                      <div 
+                        className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-700`}
+                        style={{ width: `${todayScore ? (Number(todayScore) / 10) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
 

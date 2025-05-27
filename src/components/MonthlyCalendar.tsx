@@ -35,7 +35,7 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
   const scoresMap = useMemo(() => {
     const map = new Map<string, DailyEntry>();
     entries.forEach(entry => {
-      const entryDate = new Date(entry.date);
+      const entryDate = new Date(entry.date + 'T00:00:00'); // Ensure local timezone
       if (entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear) {
         map.set(entry.date, entry);
       }
@@ -173,7 +173,10 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
           const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const entry = scoresMap.get(dateString);
           const score = entry?.score;
-          const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+          
+          // Use local timezone for today comparison
+          const localToday = new Date();
+          const isToday = day === localToday.getDate() && currentMonth === localToday.getMonth() && currentYear === localToday.getFullYear();
           const isSelected = selectedDay === day;
 
           return (

@@ -30,11 +30,15 @@ export const useCards = () => {
             console.error('Erro ao buscar notas:', notasError);
           }
 
-          const entries = notasData?.map(nota => ({
-            date: nota.data,
-            score: nota.nota,
-            notes: nota.anotacao || ''
-          })) || [];
+          const entries = notasData?.map(nota => {
+            // Ensure date is treated as local date
+            const localDate = new Date(nota.data + 'T00:00:00');
+            return {
+              date: localDate.toISOString().split('T')[0],
+              score: nota.nota,
+              notes: nota.anotacao || ''
+            };
+          }) || [];
 
           const currentScore = entries.length > 0 ? entries[entries.length - 1].score : 0;
 
