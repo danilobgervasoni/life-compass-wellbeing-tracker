@@ -34,9 +34,9 @@ const Cards = () => {
     navigate("/calendar");
   };
 
-  const handleScoreUpdate = async (pillarId: string, newScore: number, notes?: string) => {
+  const handleScoreUpdate = async (pillarId: string, newScore: number, notes?: string, specificDate?: string) => {
     try {
-      await updateScore(pillarId, newScore, notes);
+      await updateScore(pillarId, newScore, notes, specificDate);
       await refetch();
     } catch (error) {
       console.error('Erro ao atualizar pontuação:', error);

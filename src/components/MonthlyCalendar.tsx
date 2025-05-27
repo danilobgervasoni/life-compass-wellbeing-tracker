@@ -16,6 +16,7 @@ interface MonthlyCalendarProps {
 
 export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdate }: MonthlyCalendarProps) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editingScore, setEditingScore] = useState<string>("");
   const [editingNotes, setEditingNotes] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
@@ -27,7 +28,7 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
 
   // Get local today for comparison
   const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-
+  
   // Get first day of month and number of days
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
   const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
@@ -60,6 +61,12 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
     return dateString > localToday;
   };
 
+  // Check if a day is today
+  const isToday = (day: number) => {
+    const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return dateString === localToday;
+  };
+
   // Format month name in Portuguese
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -82,8 +89,8 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
   }
 
   const handleDayClick = (day: number) => {
-    // Prevent clicking on future dates
-    if (isFutureDate(day)) {
+    // Prevent clicking on future dates or today
+    if (isFutureDate(day) || isToday(day)) {
       return;
     }
 
@@ -91,13 +98,14 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
     const entry = scoresMap.get(dateString);
     
     setSelectedDay(day);
+    setSelectedDate(dateString);
     setIsEditing(true);
     setEditingScore(entry?.score?.toString() || "");
     setEditingNotes(entry?.notes || "");
   };
 
   const handleSave = async () => {
-    if (!selectedDay || !onScoreUpdate) return;
+    if (!selectedDay || !selectedDate || !onScoreUpdate) return;
     
     const score = parseInt(editingScore);
     if (isNaN(score) || score < 0 || score > 10) {
@@ -107,10 +115,10 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
 
     try {
       setSaving(true);
-      const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
-      await onScoreUpdate(dateString, score, editingNotes);
+      await onScoreUpdate(selectedDate, score, editingNotes);
       setIsEditing(false);
       setSelectedDay(null);
+      setSelectedDate(null);
     } catch (error) {
       console.error('Erro ao salvar:', error);
       alert('Erro ao salvar a pontuação. Tente novamente.');
@@ -122,17 +130,23 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
   const handleCancel = () => {
     setIsEditing(false);
     setSelectedDay(null);
+    setSelectedDate(null);
     setEditingScore("");
     setEditingNotes("");
   };
 
   const getSelectedDayEntry = () => {
-    if (!selectedDay) return null;
-    const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
-    return scoresMap.get(dateString);
+    if (!selectedDate) return null;
+    return scoresMap.get(selectedDate);
   };
 
   const selectedEntry = getSelectedDayEntry();
+
+  // Format date title
+  const getDateTitle = (day: number) => {
+    if (isToday(day)) return "hoje";
+    return `dia ${day}`;
+  };
 
   return (
     <Card className="p-6 bg-white border-0 shadow-soft">
@@ -188,25 +202,22 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
           const entry = scoresMap.get(dateString);
           const score = entry?.score;
           const isFuture = isFutureDate(day);
-          
-          // Use local timezone for today comparison
-          const localTodayDate = new Date();
-          const isToday = day === localTodayDate.getDate() && currentMonth === localTodayDate.getMonth() && currentYear === localTodayDate.getFullYear();
+          const isTodayDate = isToday(day);
           const isSelected = selectedDay === day;
 
           return (
             <button
               key={day}
               onClick={() => handleDayClick(day)}
-              disabled={isFuture}
+              disabled={isFuture || isTodayDate}
               className={`
                 aspect-square flex items-center justify-center rounded-lg text-sm font-medium
                 transition-all duration-200 
-                ${isFuture 
-                  ? 'bg-warmGray-100 text-warmGray-300 cursor-not-allowed opacity-50' 
+                ${isFuture || isTodayDate
+                  ? 'bg-warmGray-100 text-warmGray-400 cursor-not-allowed opacity-50' 
                   : 'hover:scale-105 cursor-pointer ' + getScoreColor(score)
                 }
-                ${isToday && !isFuture ? 'ring-2 ring-sage-400 ring-offset-2' : ''}
+                ${isTodayDate ? 'ring-2 ring-sage-400 ring-offset-2' : ''}
                 ${isSelected ? 'ring-2 ring-petroleum-400 ring-offset-2' : ''}
               `}
             >
@@ -221,11 +232,11 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
         })}
       </div>
 
-      {/* Editing Modal */}
-      {isEditing && selectedDay && (
+      {/* Editing Modal for Previous Days */}
+      {isEditing && selectedDay && !selectedEntry && (
         <div className="mt-6 p-5 bg-sage-50 rounded-xl border border-sage-100">
           <h4 className="text-lg font-semibold text-warmGray-800 mb-4">
-            {selectedEntry ? 'Editar' : 'Adicionar'} registro do dia {selectedDay}
+            Adicionar registro do dia {selectedDay}
           </h4>
           
           <div className="space-y-4">
@@ -276,15 +287,98 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
         </div>
       )}
 
-      {/* Selected Day Annotation (quando não está editando) */}
-      {selectedDay && !isEditing && selectedEntry?.notes && (
-        <div className="mt-6 p-5 bg-sage-50 rounded-xl border border-sage-100 animate-fade-in">
-          <h4 className="text-lg font-semibold text-warmGray-800 mb-3">
-            Anotação do dia {selectedDay}
+      {/* Editing Modal for Previous Days with Data */}
+      {isEditing && selectedDay && selectedEntry && (
+        <div className="mt-6 p-5 bg-sage-50 rounded-xl border border-sage-100">
+          <h4 className="text-lg font-semibold text-warmGray-800 mb-4">
+            Editar registro do dia {selectedDay}
           </h4>
-          <p className="text-warmGray-700 leading-relaxed">
-            {selectedEntry.notes}
-          </p>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-warmGray-700 mb-2">
+                Pontuação (0-10)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                max="10"
+                value={editingScore}
+                onChange={(e) => setEditingScore(e.target.value)}
+                placeholder="Digite uma pontuação de 0 a 10"
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-warmGray-700 mb-2">
+                Anotação (opcional)
+              </label>
+              <Textarea
+                value={editingNotes}
+                onChange={(e) => setEditingNotes(e.target.value)}
+                placeholder="Adicione suas observações para este dia..."
+                className="w-full min-h-[100px]"
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleSave}
+                disabled={saving || !editingScore}
+                className="bg-sage-600 hover:bg-sage-700 text-white"
+              >
+                {saving ? 'Salvando...' : 'Salvar'}
+              </Button>
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+                disabled={saving}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Display data for previous days when not editing */}
+      {selectedDay && !isEditing && selectedEntry && (
+        <div className="mt-6 space-y-4">
+          {/* Score Section */}
+          <Card className="p-4 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-warmGray-800">
+                Pontuação do {getDateTitle(selectedDay)}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+              >
+                Editar
+              </Button>
+            </div>
+            <div className="text-center">
+              <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillarColor} bg-clip-text text-transparent`}>
+                {selectedEntry.score}
+              </div>
+              <div className="text-warmGray-500 text-sm">de 10</div>
+            </div>
+          </Card>
+
+          {/* Notes Section */}
+          <Card className="p-4 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-warmGray-800">
+                Notas do {getDateTitle(selectedDay)}
+              </h3>
+            </div>
+            <div className="p-3 bg-warmGray-50 rounded-lg text-sm text-warmGray-700 leading-relaxed">
+              {selectedEntry.notes || "Nenhuma anotação registrada para este dia."}
+            </div>
+          </Card>
         </div>
       )}
     </Card>

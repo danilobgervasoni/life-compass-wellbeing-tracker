@@ -61,9 +61,17 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     ? currentMonthEntries.reduce((sum, entry) => sum + entry.score, 0) / currentMonthEntries.length
     : 0;
 
-  const filteredEntries = currentMonthEntries.slice(
-    timeframe === 'week' ? -7 : -30
-  );
+  // Include today's data in the filtered entries for chart
+  const filteredEntries = useMemo(() => {
+    let entries = currentMonthEntries.slice(timeframe === 'week' ? -7 : -30);
+    
+    // Ensure today's entry is included if it exists
+    if (todayEntry && !entries.find(e => e.date === localToday)) {
+      entries = [...entries, todayEntry].sort((a, b) => a.date.localeCompare(b.date));
+    }
+    
+    return entries;
+  }, [currentMonthEntries, timeframe, todayEntry, localToday]);
 
   // Get the correct icon for the pillar
   const getPillarIcon = () => {
@@ -145,27 +153,31 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     }
   };
 
-  // Handler for calendar date updates
+  // Handler for calendar date updates - ensuring dates are saved correctly
   const handleCalendarScoreUpdate = async (date: string, score: number, notes?: string) => {
     if (onScoreUpdate) {
       // Check if the date is in the future
-      const today = new Date();
-      const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-      
       if (date > localToday) {
         console.warn('Não é possível inserir dados em datas futuras');
         return;
       }
 
-      if (date === localToday) {
-        await onScoreUpdate(pillar.id, score, notes);
+      // Create a temporary entry for the specific date
+      const tempEntry = { date, score, notes: notes || '' };
+      
+      // Call the parent's score update function with the date-specific data
+      try {
+        // For past dates, we need to call the backend directly with the correct date
+        await onScoreUpdate(pillar.id, score, notes, date);
         
         // Also save as reflection if there are notes
         if (notes && notes.trim()) {
-          await saveReflection(pillar.id, notes);
+          await saveReflection(pillar.id, notes, date);
         }
-      } else {
-        console.log('Calendar update for date:', date, 'score:', score, 'notes:', notes);
+        
+        console.log('Calendar update saved for date:', date, 'score:', score, 'notes:', notes);
+      } catch (error) {
+        console.error('Error saving calendar update:', error);
       }
     }
   };
@@ -303,9 +315,9 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
                       variant="ghost"
                       size="sm"
                       onClick={handleEditScore}
-                      className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+                      className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
                     >
-                      <Edit className="h-3 w-3" />
+                      Editar
                     </Button>
                   </div>
                   <div className="text-center">
@@ -363,9 +375,9 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
                       variant="ghost"
                       size="sm"
                       onClick={() => setEditingNotes(true)}
-                      className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+                      className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
                     >
-                      <Edit3 className="h-3 w-3" />
+                      Editar
                     </Button>
                   </div>
                   <div className="min-h-[100px] p-3 bg-warmGray-50 rounded-lg text-sm">
@@ -383,9 +395,9 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
                       variant="ghost"
                       size="sm"
                       onClick={() => setEditingNotes(true)}
-                      className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+                      className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
                     >
-                      <Edit3 className="h-3 w-3" />
+                      Editar
                     </Button>
                   </div>
                   <div className="p-3 bg-warmGray-50 rounded-lg text-sm text-warmGray-700 leading-relaxed">
@@ -402,9 +414,9 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
                       size="sm"
                       onClick={handleSaveNotes}
                       disabled={saving}
-                      className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+                      className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
                     >
-                      <Save className="h-3 w-3" />
+                      Salvar
                     </Button>
                   </div>
                   <Textarea
