@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Calendar, Edit3, Save, Edit, BarChart3, CalendarDays, ArrowLeft } from "lucide-react";
 import { Pillar, DailyEntry } from "@/types/pillar";
@@ -168,9 +169,9 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
         // For past dates, we need to call the backend directly with the correct date
         await onScoreUpdate(pillar.id, score, notes, date);
         
-        // Also save as reflection if there are notes - fix: use the date parameter
+        // Also save as reflection if there are notes - fix: use only 2 arguments for past dates
         if (notes && notes.trim()) {
-          await saveReflection(pillar.id, notes, date);
+          await saveReflection(pillar.id, notes);
         }
         
         console.log('Calendar update saved for date:', date, 'score:', score, 'notes:', notes);
