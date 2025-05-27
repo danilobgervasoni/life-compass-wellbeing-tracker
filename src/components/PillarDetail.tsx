@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Calendar, Edit3, Save, Edit, BarChart3, CalendarDays, ArrowLeft } from "lucide-react";
 import { Pillar, DailyEntry } from "@/types/pillar";
@@ -73,7 +72,6 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     return entries;
   }, [currentMonthEntries, timeframe, todayEntry, localToday]);
 
-  // Get the correct icon for the pillar
   const getPillarIcon = () => {
     switch (pillar.icon) {
       case '💰':
@@ -109,7 +107,7 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
         const scoreValue = Number(todayScore);
         await onScoreUpdate(pillar.id, scoreValue, notes);
         
-        // Also save as reflection if there are notes
+        // Also save as reflection if there are notes - fix: use only 2 arguments
         if (notes.trim()) {
           await saveReflection(pillar.id, notes);
         }
@@ -170,7 +168,7 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
         // For past dates, we need to call the backend directly with the correct date
         await onScoreUpdate(pillar.id, score, notes, date);
         
-        // Also save as reflection if there are notes
+        // Also save as reflection if there are notes - fix: use the date parameter
         if (notes && notes.trim()) {
           await saveReflection(pillar.id, notes, date);
         }
@@ -182,7 +180,6 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     }
   };
 
-  // Format today's date in Portuguese
   const formatTodayDate = () => {
     const months = [
       'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',

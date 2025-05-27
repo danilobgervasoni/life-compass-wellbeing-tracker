@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
@@ -29,17 +28,17 @@ const Reflections = () => {
   const { reflections, loading } = useReflections();
   const { cards } = useCards();
 
-  // Converter reflexões do banco para o formato da interface
+  // Convert reflections from database to interface format
   const convertedReflections: ReflectionWithPillar[] = reflections.map(reflection => {
-    const card = cards.find(c => c.id === reflection.card_id);
+    const card = cards.find(c => c.id === reflection.pillarId);
     return {
       id: reflection.id,
-      date: reflection.data,
-      pillarId: reflection.card_id,
-      pillarName: card?.name || 'Pilar Desconhecido',
-      pillarIcon: card?.icon || '❓',
-      content: reflection.texto,
-      isFavorite: false // Pode ser implementado posteriormente
+      date: reflection.date,
+      pillarId: reflection.pillarId,
+      pillarName: card?.name || reflection.pillarName,
+      pillarIcon: card?.icon || reflection.pillarIcon,
+      content: reflection.text,
+      isFavorite: false // Can be implemented later
     };
   });
 
@@ -59,7 +58,7 @@ const Reflections = () => {
     navigate("/calendar");
   };
 
-  // Filtrar reflexões baseado nos critérios
+  // Filter reflections based on criteria
   const filteredReflections = convertedReflections.filter(reflection => {
     const matchesSearch = reflection.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          reflection.pillarName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -69,7 +68,7 @@ const Reflections = () => {
     return matchesSearch && matchesPillar && matchesDate;
   });
 
-  // Obter última reflexão para cada pilar
+  // Get latest reflection for each pillar
   const getLatestReflectionsByPillar = () => {
     const latestByPillar: Record<string, ReflectionWithPillar> = {};
     
@@ -92,7 +91,7 @@ const Reflections = () => {
 
   const latestReflections = getLatestReflectionsByPillar();
 
-  // Agrupar reflexões filtradas por data
+  // Group filtered reflections by date
   const groupedReflections = filteredReflections.reduce((groups, reflection) => {
     const date = reflection.date;
     if (!groups[date]) {
@@ -102,7 +101,7 @@ const Reflections = () => {
     return groups;
   }, {} as Record<string, ReflectionWithPillar[]>);
 
-  // Ordenar datas em ordem decrescente
+  // Sort dates in descending order
   const sortedDates = Object.keys(groupedReflections).sort((a, b) => 
     new Date(b).getTime() - new Date(a).getTime()
   );
