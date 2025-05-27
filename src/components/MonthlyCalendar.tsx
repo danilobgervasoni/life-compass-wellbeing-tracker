@@ -25,6 +25,9 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
+  // Get local today for comparison
+  const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
   // Get first day of month and number of days
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
   const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
@@ -51,6 +54,12 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
     return "bg-sage-500 text-white shadow-soft";
   };
 
+  // Check if a day is in the future
+  const isFutureDate = (day: number) => {
+    const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return dateString > localToday;
+  };
+
   // Format month name in Portuguese
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -73,6 +82,11 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
   }
 
   const handleDayClick = (day: number) => {
+    // Prevent clicking on future dates
+    if (isFutureDate(day)) {
+      return;
+    }
+
     const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const entry = scoresMap.get(dateString);
     
@@ -173,21 +187,26 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
           const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const entry = scoresMap.get(dateString);
           const score = entry?.score;
+          const isFuture = isFutureDate(day);
           
           // Use local timezone for today comparison
-          const localToday = new Date();
-          const isToday = day === localToday.getDate() && currentMonth === localToday.getMonth() && currentYear === localToday.getFullYear();
+          const localTodayDate = new Date();
+          const isToday = day === localTodayDate.getDate() && currentMonth === localTodayDate.getMonth() && currentYear === localTodayDate.getFullYear();
           const isSelected = selectedDay === day;
 
           return (
             <button
               key={day}
               onClick={() => handleDayClick(day)}
+              disabled={isFuture}
               className={`
                 aspect-square flex items-center justify-center rounded-lg text-sm font-medium
-                transition-all duration-200 hover:scale-105 cursor-pointer
-                ${getScoreColor(score)}
-                ${isToday ? 'ring-2 ring-sage-400 ring-offset-2' : ''}
+                transition-all duration-200 
+                ${isFuture 
+                  ? 'bg-warmGray-100 text-warmGray-300 cursor-not-allowed opacity-50' 
+                  : 'hover:scale-105 cursor-pointer ' + getScoreColor(score)
+                }
+                ${isToday && !isFuture ? 'ring-2 ring-sage-400 ring-offset-2' : ''}
                 ${isSelected ? 'ring-2 ring-petroleum-400 ring-offset-2' : ''}
               `}
             >

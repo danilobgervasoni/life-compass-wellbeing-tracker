@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Pillar } from '@/types/pillar';
@@ -18,12 +17,17 @@ export const useCards = () => {
 
       if (cardsError) throw cardsError;
 
+      // Get today's date in local timezone
+      const today = new Date();
+      const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
       const cardsWithEntries: Pillar[] = await Promise.all(
         cardsData.map(async (card) => {
           const { data: notasData, error: notasError } = await supabase
             .from('notas')
             .select('*')
             .eq('card_id', card.id)
+            .lte('data', localToday) // Only get entries up to today
             .order('data', { ascending: true });
 
           if (notasError) {
@@ -31,7 +35,6 @@ export const useCards = () => {
           }
 
           const entries = notasData?.map(nota => {
-            // Ensure date is treated as local date
             const localDate = new Date(nota.data + 'T00:00:00');
             return {
               date: localDate.toISOString().split('T')[0],
@@ -71,8 +74,33 @@ export const useCards = () => {
     }
   };
 
+  const cleanupFutureEntries = async () => {
+    try {
+      const today = new Date();
+      const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
+      // Delete future entries from notas
+      await supabase
+        .from('notas')
+        .delete()
+        .gt('data', localToday);
+
+      // Delete future entries from reflexoes
+      await supabase
+        .from('reflexoes')
+        .delete()
+        .gt('data', localToday);
+
+      console.log('Limpeza de dados futuros concluída');
+    } catch (error) {
+      console.error('Erro ao limpar dados futuros:', error);
+    }
+  };
+
   useEffect(() => {
-    fetchCards();
+    cleanupFutureEntries().then(() => {
+      fetchCards();
+    });
   }, []);
 
   return { cards, loading, error, refetch: fetchCards };

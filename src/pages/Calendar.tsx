@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ const Calendar = () => {
   const { cards, loading } = useCards();
 
   const today = new Date();
+  const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
   
   // Get first day of month and number of days
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
@@ -39,6 +40,12 @@ const Calendar = () => {
 
   const daysWithEntries = getDaysWithEntries();
 
+  // Check if a day is in the future
+  const isFutureDate = (day: number) => {
+    const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return dateString > localToday;
+  };
+
   // Format month name in Portuguese
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -61,8 +68,16 @@ const Calendar = () => {
   }
 
   const handleDayClick = (day: number) => {
+    // Only allow clicking on dates with entries or today/past dates
     const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    setSelectedDate(dateString);
+    
+    if (isFutureDate(day)) {
+      return;
+    }
+
+    if (daysWithEntries.has(dateString)) {
+      setSelectedDate(dateString);
+    }
   };
 
   const handleNavigateToReflections = () => {
@@ -180,18 +195,24 @@ const Calendar = () => {
 
                 const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const hasEntries = daysWithEntries.has(dateString);
+                const isFuture = isFutureDate(day);
                 const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
 
                 return (
                   <button
                     key={day}
                     onClick={() => handleDayClick(day)}
+                    disabled={isFuture || !hasEntries}
                     className={`
                       aspect-square flex flex-col items-center justify-center rounded-lg text-sm font-medium
-                      transition-all duration-200 hover:scale-105 hover:bg-sage-50
-                      ${isToday ? 'ring-2 ring-sage-600 ring-offset-1' : ''}
-                      ${hasEntries ? 'bg-warmGray-50' : 'bg-white'}
-                      border border-warmGray-200 hover:border-sage-300
+                      transition-all duration-200 border border-warmGray-200
+                      ${isFuture 
+                        ? 'bg-warmGray-100 text-warmGray-300 cursor-not-allowed opacity-50' 
+                        : hasEntries 
+                          ? 'bg-warmGray-50 hover:scale-105 hover:bg-sage-50 hover:border-sage-300 cursor-pointer' 
+                          : 'bg-white text-warmGray-400'
+                      }
+                      ${isToday && !isFuture ? 'ring-2 ring-sage-600 ring-offset-1' : ''}
                     `}
                   >
                     <span className="text-warmGray-700">{day}</span>
@@ -202,6 +223,18 @@ const Calendar = () => {
                 );
               })}
             </div>
+
+            {/* No data message */}
+            {cards.length > 0 && daysWithEntries.size === 0 && (
+              <div className="text-center mt-8 p-6">
+                <p className="text-warmGray-500 text-sm">
+                  Nenhum registro encontrado para {monthNames[currentMonth]} de {currentYear}.
+                </p>
+                <p className="text-warmGray-400 text-xs mt-2">
+                  Comece avaliando seus pilares para ver os registros aqui.
+                </p>
+              </div>
+            )}
           </Card>
 
           {/* Day Detail Modal */}

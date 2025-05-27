@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Calendar, Edit3, Save, Edit, BarChart3, CalendarDays, ArrowLeft } from "lucide-react";
 import { Pillar, DailyEntry } from "@/types/pillar";
@@ -129,9 +130,33 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     setIsEditingScore(true);
   };
 
+  const handleSaveNotes = async () => {
+    if (notes.trim() && todayEntry) {
+      try {
+        setSaving(true);
+        await saveReflection(pillar.id, notes);
+        setEditingNotes(false);
+        console.log(`Anotação salva para ${pillar.name}`);
+      } catch (error) {
+        console.error('Erro ao salvar anotação:', error);
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
   // Handler for calendar date updates
   const handleCalendarScoreUpdate = async (date: string, score: number, notes?: string) => {
     if (onScoreUpdate) {
+      // Check if the date is in the future
+      const today = new Date();
+      const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+      
+      if (date > localToday) {
+        console.warn('Não é possível inserir dados em datas futuras');
+        return;
+      }
+
       if (date === localToday) {
         await onScoreUpdate(pillar.id, score, notes);
         
@@ -251,75 +276,70 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
           <div className="space-y-6">
             {/* Today's Score Input */}
             <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
-              <h3 className="text-lg font-semibold text-warmGray-800 mb-4">Pontuação de Hoje</h3>
-              <div className="space-y-4">
-                {!todayEntry && !isEditingScore ? (
-                  // No entry exists and not editing - show placeholder
-                  <div>
-                    <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
-                    <div className="flex space-x-2 mt-2">
-                      <Input
-                        id="score"
-                        type="number"
-                        min="0"
-                        max="10"
-                        placeholder="Insira um valor entre 0 e 10"
-                        className="text-center text-xl sm:text-2xl font-bold"
-                        onClick={handleStartNewEntry}
-                        readOnly
-                      />
-                    </div>
+              {!todayEntry && !isEditingScore ? (
+                // No entry exists and not editing - show placeholder
+                <div>
+                  <h3 className="text-lg font-semibold text-warmGray-800 mb-4">Pontuação de Hoje</h3>
+                  <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
+                  <div className="flex space-x-2 mt-2">
+                    <Input
+                      id="score"
+                      type="number"
+                      min="0"
+                      max="10"
+                      placeholder="Insira um valor entre 0 e 10"
+                      className="text-center text-xl sm:text-2xl font-bold"
+                      onClick={handleStartNewEntry}
+                      readOnly
+                    />
                   </div>
-                ) : !isEditingScore ? (
-                  // Entry exists and not editing - show score with edit button
-                  <div>
-                    <Label className="text-sm">Pontuação de hoje</Label>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <div className="flex-1 text-center">
-                        <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
-                          {displayScore}
-                        </div>
-                        <div className="text-warmGray-500">de 10</div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleEditScore}
-                        className="text-warmGray-600 hover:text-sage-700"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Editar
-                      </Button>
-                    </div>
+                </div>
+              ) : !isEditingScore ? (
+                // Entry exists and not editing - show score with edit button
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-warmGray-800">Pontuação de hoje</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleEditScore}
+                      className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
                   </div>
-                ) : (
-                  // Editing mode - show input field
-                  <div>
-                    <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
-                    <div className="flex space-x-2 mt-2">
-                      <Input
-                        id="score"
-                        type="number"
-                        min="0"
-                        max="10"
-                        value={todayScore}
-                        onChange={handleScoreChange}
-                        placeholder="Insira um valor entre 0 e 10"
-                        className="text-center text-xl sm:text-2xl font-bold"
-                      />
-                      <Button 
-                        onClick={handleSaveScore} 
-                        size="sm" 
-                        className="bg-sage-600 hover:bg-sage-700 shrink-0"
-                        disabled={saving || todayScore === ""}
-                      >
-                        {saving ? 'Salvando...' : 'Salvar'}
-                      </Button>
+                  <div className="text-center">
+                    <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
+                      {displayScore}
                     </div>
+                    <div className="text-warmGray-500 text-sm">de 10</div>
                   </div>
-                )}
-                
-                {isEditingScore && (
+                </div>
+              ) : (
+                // Editing mode - show input field
+                <div>
+                  <h3 className="text-lg font-semibold text-warmGray-800 mb-4">Pontuação de Hoje</h3>
+                  <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
+                  <div className="flex space-x-2 mt-2">
+                    <Input
+                      id="score"
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={todayScore}
+                      onChange={handleScoreChange}
+                      placeholder="Insira um valor entre 0 e 10"
+                      className="text-center text-xl sm:text-2xl font-bold"
+                    />
+                    <Button 
+                      onClick={handleSaveScore} 
+                      size="sm" 
+                      className="bg-sage-600 hover:bg-sage-700 shrink-0"
+                      disabled={saving || todayScore === ""}
+                    >
+                      {saving ? 'Salvando...' : 'Salvar'}
+                    </Button>
+                  </div>
                   <div className="text-center">
                     <div className={`w-full h-3 bg-warmGray-200 rounded-full mt-4 overflow-hidden`}>
                       <div 
@@ -328,37 +348,71 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
                       />
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </Card>
 
             {/* Notes */}
             <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-warmGray-800">Notas de Hoje</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingNotes(!editingNotes)}
-                >
-                  {editingNotes ? <Save className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
-                </Button>
-              </div>
-              
-              {editingNotes ? (
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Adicione seus pensamentos para hoje..."
-                  className="min-h-[100px] resize-none text-sm"
-                />
-              ) : (
-                <div className="min-h-[100px] p-3 bg-warmGray-50 rounded-lg text-sm">
-                  {notes || (
+              {!editingNotes && (!notes || notes.trim() === '') ? (
+                // No notes and not editing
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-warmGray-800">Notas de Hoje</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingNotes(true)}
+                      className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="min-h-[100px] p-3 bg-warmGray-50 rounded-lg text-sm">
                     <span className="text-warmGray-400 italic">
                       Ainda não há notas. Clique em editar para adicionar seus pensamentos.
                     </span>
-                  )}
+                  </div>
+                </div>
+              ) : !editingNotes ? (
+                // Has notes and not editing
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-warmGray-800">Notas de hoje</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingNotes(true)}
+                      className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="p-3 bg-warmGray-50 rounded-lg text-sm text-warmGray-700 leading-relaxed">
+                    {notes}
+                  </div>
+                </div>
+              ) : (
+                // Editing mode
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-warmGray-800">Notas de Hoje</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSaveNotes}
+                      disabled={saving}
+                      className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
+                    >
+                      <Save className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Adicione seus pensamentos para hoje..."
+                    className="min-h-[100px] resize-none text-sm"
+                  />
                 </div>
               )}
             </Card>
