@@ -167,7 +167,7 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
       // Call the parent's score update function with the date-specific data
       try {
         // For past dates, we need to call the backend directly with the correct date
-        await onScoreUpdate(pillar.id, score, notes, date);
+        await onScoreUpdate(pillar.id, score, notes);
         
         // Also save as reflection if there are notes - fix: use only 2 arguments for past dates
         if (notes && notes.trim()) {
