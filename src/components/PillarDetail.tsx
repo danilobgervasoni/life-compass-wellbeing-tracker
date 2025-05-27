@@ -27,6 +27,8 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
   const [todayScore, setTodayScore] = useState<number | string>("");
   const [isEditingScore, setIsEditingScore] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDateData, setSelectedDateData] = useState<DailyEntry | null>(null);
   const { saveReflection } = useReflections();
 
   // Use local timezone for today
@@ -108,8 +110,8 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
         const scoreValue = Number(todayScore);
         await onScoreUpdate(pillar.id, scoreValue, notes);
         
-        // Also save as reflection if there are notes - fix: use only 2 arguments
-        if (notes.trim()) {
+        // Only save as reflection if there are notes and it's for today
+        if (notes.trim() && !selectedDate) {
           await saveReflection(pillar.id, notes);
         }
         
@@ -152,7 +154,7 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     }
   };
 
-  // Handler for calendar date updates - ensuring dates are saved correctly
+  // Handler for calendar date updates - CORRIGIDO para evitar duplicações
   const handleCalendarScoreUpdate = async (date: string, score: number, notes?: string) => {
     if (onScoreUpdate) {
       // Check if the date is in the future
@@ -161,24 +163,24 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
         return;
       }
 
-      // Create a temporary entry for the specific date
-      const tempEntry = { date, score, notes: notes || '' };
-      
-      // Call the parent's score update function with the date-specific data
       try {
-        // For past dates, we need to call the backend directly with the correct date
+        // Para datas passadas, salvamos apenas na tabela notas
         await onScoreUpdate(pillar.id, score, notes);
         
-        // Also save as reflection if there are notes - fix: use only 2 arguments for past dates
-        if (notes && notes.trim()) {
-          await saveReflection(pillar.id, notes);
-        }
+        // NÃO salvar como reflexão separada para evitar duplicação
+        // A anotação já é salva junto com a pontuação na tabela notas
         
         console.log('Calendar update saved for date:', date, 'score:', score, 'notes:', notes);
       } catch (error) {
         console.error('Error saving calendar update:', error);
       }
     }
+  };
+
+  // Handler para quando uma data é selecionada no calendário
+  const handleDateSelected = (date: string, entry: DailyEntry | null) => {
+    setSelectedDate(date);
+    setSelectedDateData(entry);
   };
 
   const formatTodayDate = () => {
@@ -188,6 +190,11 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     ];
     return `${today.getDate()}, ${months[today.getMonth()]} de ${today.getFullYear()}`;
   };
+
+  // Determinar qual conteúdo exibir baseado na data selecionada
+  const isShowingToday = !selectedDate || selectedDate === localToday;
+  const isShowingPastDate = selectedDate && selectedDate < localToday;
+  const currentEntry = selectedDate ? pillar.entries.find(e => e.date === selectedDate) : todayEntry;
 
   return (
     <div className="min-h-screen bg-warmGray-50">
@@ -277,155 +284,196 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
                   pillarName={pillar.name}
                   pillarColor={pillar.color}
                   onScoreUpdate={handleCalendarScoreUpdate}
+                  onDateSelected={handleDateSelected}
                 />
               </TabsContent>
             </Tabs>
           </div>
 
-          {/* Score Input & Stats */}
+          {/* Score Input & Stats - LÓGICA CORRIGIDA */}
           <div className="space-y-6">
-            {/* Today's Score Input */}
-            <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
-              {!todayEntry && !isEditingScore ? (
-                // No entry exists and not editing - show placeholder
-                <div>
-                  <h3 className="text-lg font-semibold text-warmGray-800 mb-4">Pontuação de Hoje</h3>
-                  <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
-                  <div className="flex space-x-2 mt-2">
-                    <Input
-                      id="score"
-                      type="number"
-                      min="0"
-                      max="10"
-                      placeholder="Insira um valor entre 0 e 10"
-                      className="text-center text-xl sm:text-2xl font-bold"
-                      onClick={handleStartNewEntry}
-                      readOnly
-                    />
-                  </div>
-                </div>
-              ) : !isEditingScore ? (
-                // Entry exists and not editing - show score with edit button
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-warmGray-800">Pontuação de hoje</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleEditScore}
-                      className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
-                    >
-                      Editar
-                    </Button>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
-                      {displayScore}
+            {/* Exibir apenas para hoje OU quando uma data passada é selecionada e tem dados */}
+            {(isShowingToday || (isShowingPastDate && currentEntry)) && (
+              <>
+                {/* Today's/Selected Date Score Input */}
+                <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
+                  {!currentEntry && !isEditingScore ? (
+                    // No entry exists and not editing - show placeholder (only for today)
+                    isShowingToday && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-warmGray-800 mb-4">Pontuação de Hoje</h3>
+                        <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
+                        <div className="flex space-x-2 mt-2">
+                          <Input
+                            id="score"
+                            type="number"
+                            min="0"
+                            max="10"
+                            placeholder="Insira um valor entre 0 e 10"
+                            className="text-center text-xl sm:text-2xl font-bold"
+                            onClick={handleStartNewEntry}
+                            readOnly
+                          />
+                        </div>
+                      </div>
+                    )
+                  ) : !isEditingScore ? (
+                    // Entry exists and not editing - show score with edit button
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-warmGray-800">
+                          {isShowingToday ? 'Pontuação de hoje' : `Pontuação do dia ${new Date(selectedDate!).getDate()}`}
+                        </h3>
+                        {isShowingToday && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleEditScore}
+                            className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
+                          >
+                            Editar
+                          </Button>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillar.color} bg-clip-text text-transparent`}>
+                          {currentEntry?.score}
+                        </div>
+                        <div className="text-warmGray-500 text-sm">de 10</div>
+                      </div>
                     </div>
-                    <div className="text-warmGray-500 text-sm">de 10</div>
-                  </div>
-                </div>
-              ) : (
-                // Editing mode - show input field
-                <div>
-                  <h3 className="text-lg font-semibold text-warmGray-800 mb-4">Pontuação de Hoje</h3>
-                  <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
-                  <div className="flex space-x-2 mt-2">
-                    <Input
-                      id="score"
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={todayScore}
-                      onChange={handleScoreChange}
-                      placeholder="Insira um valor entre 0 e 10"
-                      className="text-center text-xl sm:text-2xl font-bold"
-                    />
-                    <Button 
-                      onClick={handleSaveScore} 
-                      size="sm" 
-                      className="bg-sage-600 hover:bg-sage-700 shrink-0"
-                      disabled={saving || todayScore === ""}
-                    >
-                      {saving ? 'Salvando...' : 'Salvar'}
-                    </Button>
-                  </div>
-                  <div className="text-center">
-                    <div className={`w-full h-3 bg-warmGray-200 rounded-full mt-4 overflow-hidden`}>
-                      <div 
-                        className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-700`}
-                        style={{ width: `${todayScore ? (Number(todayScore) / 10) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Card>
+                  ) : (
+                    // Editing mode - show input field (only for today)
+                    isShowingToday && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-warmGray-800 mb-4">Pontuação de Hoje</h3>
+                        <Label htmlFor="score" className="text-sm">Insira sua pontuação (0-10)</Label>
+                        <div className="flex space-x-2 mt-2">
+                          <Input
+                            id="score"
+                            type="number"
+                            min="0"
+                            max="10"
+                            value={todayScore}
+                            onChange={handleScoreChange}
+                            placeholder="Insira um valor entre 0 e 10"
+                            className="text-center text-xl sm:text-2xl font-bold"
+                          />
+                          <Button 
+                            onClick={handleSaveScore} 
+                            size="sm" 
+                            className="bg-sage-600 hover:bg-sage-700 shrink-0"
+                            disabled={saving || todayScore === ""}
+                          >
+                            {saving ? 'Salvando...' : 'Salvar'}
+                          </Button>
+                        </div>
+                        <div className="text-center">
+                          <div className={`w-full h-3 bg-warmGray-200 rounded-full mt-4 overflow-hidden`}>
+                            <div 
+                              className={`h-full bg-gradient-to-r ${pillar.color} transition-all duration-700`}
+                              style={{ width: `${todayScore ? (Number(todayScore) / 10) * 100 : 0}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </Card>
 
-            {/* Notes */}
-            <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
-              {!editingNotes && (!notes || notes.trim() === '') ? (
-                // No notes and not editing
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-warmGray-800">Notas de Hoje</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingNotes(true)}
-                      className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
-                    >
-                      Editar
-                    </Button>
-                  </div>
-                  <div className="min-h-[100px] p-3 bg-warmGray-50 rounded-lg text-sm">
-                    <span className="text-warmGray-400 italic">
-                      Ainda não há notas. Clique em editar para adicionar seus pensamentos.
-                    </span>
-                  </div>
+                {/* Notes */}
+                <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
+                  {!editingNotes && (!currentEntry?.notes || currentEntry.notes.trim() === '') ? (
+                    // No notes and not editing
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-warmGray-800">
+                          {isShowingToday ? 'Notas de Hoje' : `Notas do dia ${new Date(selectedDate!).getDate()}`}
+                        </h3>
+                        {isShowingToday && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingNotes(true)}
+                            className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
+                          >
+                            Editar
+                          </Button>
+                        )}
+                      </div>
+                      <div className="min-h-[100px] p-3 bg-warmGray-50 rounded-lg text-sm">
+                        <span className="text-warmGray-400 italic">
+                          {isShowingToday 
+                            ? "Ainda não há notas. Clique em editar para adicionar seus pensamentos."
+                            : "Nenhuma anotação registrada para este dia."
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  ) : !editingNotes ? (
+                    // Has notes and not editing
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-warmGray-800">
+                          {isShowingToday ? 'Notas de hoje' : `Notas do dia ${new Date(selectedDate!).getDate()}`}
+                        </h3>
+                        {isShowingToday && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingNotes(true)}
+                            className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
+                          >
+                            Editar
+                          </Button>
+                        )}
+                      </div>
+                      <div className="p-3 bg-warmGray-50 rounded-lg text-sm text-warmGray-700 leading-relaxed">
+                        {currentEntry?.notes}
+                      </div>
+                    </div>
+                  ) : (
+                    // Editing mode (only for today)
+                    isShowingToday && (
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-warmGray-800">Notas de Hoje</h3>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleSaveNotes}
+                            disabled={saving}
+                            className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
+                          >
+                            Salvar
+                          </Button>
+                        </div>
+                        <Textarea
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Adicione seus pensamentos para hoje..."
+                          className="min-h-[100px] resize-none text-sm"
+                        />
+                      </div>
+                    )
+                  )}
+                </Card>
+              </>
+            )}
+
+            {/* Mensagem quando nenhuma data com dados está selecionada */}
+            {isShowingPastDate && !currentEntry && (
+              <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-warmGray-800 mb-2">
+                    Dia {new Date(selectedDate!).getDate()}
+                  </h3>
+                  <p className="text-warmGray-600 text-sm">
+                    Nenhum registro encontrado para este dia. Use o calendário para adicionar dados.
+                  </p>
                 </div>
-              ) : !editingNotes ? (
-                // Has notes and not editing
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-warmGray-800">Notas de hoje</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingNotes(true)}
-                      className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
-                    >
-                      Editar
-                    </Button>
-                  </div>
-                  <div className="p-3 bg-warmGray-50 rounded-lg text-sm text-warmGray-700 leading-relaxed">
-                    {notes}
-                  </div>
-                </div>
-              ) : (
-                // Editing mode
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-warmGray-800">Notas de Hoje</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSaveNotes}
-                      disabled={saving}
-                      className="text-xs px-2 py-1 h-auto text-warmGray-500 hover:text-sage-700 border border-warmGray-300 hover:border-sage-300 rounded"
-                    >
-                      Salvar
-                    </Button>
-                  </div>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Adicione seus pensamentos para hoje..."
-                    className="min-h-[100px] resize-none text-sm"
-                  />
-                </div>
-              )}
-            </Card>
+              </Card>
+            )}
           </div>
         </div>
       </div>

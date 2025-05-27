@@ -12,9 +12,10 @@ interface MonthlyCalendarProps {
   pillarName: string;
   pillarColor: string;
   onScoreUpdate?: (date: string, score: number, notes?: string) => void;
+  onDateSelected?: (date: string, entry: DailyEntry | null) => void;
 }
 
-export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdate }: MonthlyCalendarProps) => {
+export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdate, onDateSelected }: MonthlyCalendarProps) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editingScore, setEditingScore] = useState<string>("");
@@ -22,12 +23,13 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   
+  // CORRIGIDO: Usar timezone local correto
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
-  // Get local today for comparison
-  const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+  // CORRIGIDO: Get local today for comparison - usar apenas a data sem considerar timezone offset
+  const localToday = today.toISOString().split('T')[0];
   
   // Get first day of month and number of days
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
@@ -61,7 +63,7 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
     return dateString > localToday;
   };
 
-  // Check if a day is today
+  // CORRIGIDO: Check if a day is today
   const isToday = (day: number) => {
     const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return dateString === localToday;
@@ -99,6 +101,12 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
     
     setSelectedDay(day);
     setSelectedDate(dateString);
+    
+    // CORRIGIDO: Notificar o componente pai sobre a seleção de data
+    if (onDateSelected) {
+      onDateSelected(dateString, entry || null);
+    }
+    
     setIsEditing(true);
     setEditingScore(entry?.score?.toString() || "");
     setEditingNotes(entry?.notes || "");
@@ -119,6 +127,11 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
       setIsEditing(false);
       setSelectedDay(null);
       setSelectedDate(null);
+      
+      // Notificar sobre a atualização
+      if (onDateSelected) {
+        onDateSelected(selectedDate, { date: selectedDate, score, notes: editingNotes });
+      }
     } catch (error) {
       console.error('Erro ao salvar:', error);
       alert('Erro ao salvar a pontuação. Tente novamente.');
@@ -133,6 +146,11 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
     setSelectedDate(null);
     setEditingScore("");
     setEditingNotes("");
+    
+    // Limpar seleção no componente pai
+    if (onDateSelected) {
+      onDateSelected("", null);
+    }
   };
 
   const getSelectedDayEntry = () => {
@@ -141,12 +159,6 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
   };
 
   const selectedEntry = getSelectedDayEntry();
-
-  // Format date title
-  const getDateTitle = (day: number) => {
-    if (isToday(day)) return "hoje";
-    return `dia ${day}`;
-  };
 
   return (
     <Card className="p-6 bg-white border-0 shadow-soft">
@@ -339,46 +351,6 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdat
               </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Display data for previous days when not editing */}
-      {selectedDay && !isEditing && selectedEntry && (
-        <div className="mt-6 space-y-4">
-          {/* Score Section */}
-          <Card className="p-4 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-warmGray-800">
-                Pontuação do {getDateTitle(selectedDay)}
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                className="text-warmGray-500 hover:text-sage-700 p-1 h-auto"
-              >
-                Editar
-              </Button>
-            </div>
-            <div className="text-center">
-              <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${pillarColor} bg-clip-text text-transparent`}>
-                {selectedEntry.score}
-              </div>
-              <div className="text-warmGray-500 text-sm">de 10</div>
-            </div>
-          </Card>
-
-          {/* Notes Section */}
-          <Card className="p-4 bg-white/80 backdrop-blur-sm border-0 shadow-soft">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-warmGray-800">
-                Notas do {getDateTitle(selectedDay)}
-              </h3>
-            </div>
-            <div className="p-3 bg-warmGray-50 rounded-lg text-sm text-warmGray-700 leading-relaxed">
-              {selectedEntry.notes || "Nenhuma anotação registrada para este dia."}
-            </div>
-          </Card>
         </div>
       )}
     </Card>

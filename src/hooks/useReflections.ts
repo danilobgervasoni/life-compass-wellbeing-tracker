@@ -23,9 +23,9 @@ export const useReflections = () => {
       
       // Get today's date in local timezone
       const today = new Date();
-      const localToday = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+      const localToday = today.toISOString().split('T')[0];
 
-      // Fetch reflections from reflexoes table
+      // CORRIGIDO: Buscar apenas reflexões da tabela reflexoes para evitar duplicações
       const { data: reflexoesData, error: reflexoesError } = await supabase
         .from('reflexoes')
         .select(`
@@ -44,27 +44,6 @@ export const useReflections = () => {
 
       if (reflexoesError) throw reflexoesError;
 
-      // Also fetch notes that have anotacao field filled
-      const { data: notasData, error: notasError } = await supabase
-        .from('notas')
-        .select(`
-          id,
-          anotacao,
-          data,
-          card_id,
-          cards (
-            nome,
-            icone,
-            categoria
-          )
-        `)
-        .not('anotacao', 'is', null)
-        .neq('anotacao', '')
-        .lte('data', localToday)
-        .order('data', { ascending: false });
-
-      if (notasError) throw notasError;
-
       const getColorByCategory = (categoria: string) => {
         const colorMap: Record<string, string> = {
           'financeiro': 'from-emerald-500 to-emerald-600',
@@ -77,30 +56,16 @@ export const useReflections = () => {
         return colorMap[categoria] || 'from-sage-500 to-sage-600';
       };
 
-      // Combine and format reflections
-      const formattedReflections: Reflection[] = [
-        // From reflexoes table
-        ...(reflexoesData?.map(item => ({
-          id: item.id,
-          text: item.texto,
-          date: item.data,
-          pillarId: item.card_id,
-          pillarName: item.cards?.nome || 'Pilar Desconhecido',
-          pillarIcon: item.cards?.icone || '❤️',
-          pillarColor: getColorByCategory(item.cards?.categoria || '')
-        })) || []),
-        
-        // From notas table
-        ...(notasData?.map(item => ({
-          id: `nota-${item.id}`,
-          text: item.anotacao || '',
-          date: item.data,
-          pillarId: item.card_id,
-          pillarName: item.cards?.nome || 'Pilar Desconhecido',
-          pillarIcon: item.cards?.icone || '❤️',
-          pillarColor: getColorByCategory(item.cards?.categoria || '')
-        })) || [])
-      ];
+      // CORRIGIDO: Apenas reflexões da tabela reflexoes - sem duplicações
+      const formattedReflections: Reflection[] = reflexoesData?.map(item => ({
+        id: item.id,
+        text: item.texto,
+        date: item.data,
+        pillarId: item.card_id,
+        pillarName: item.cards?.nome || 'Pilar Desconhecido',
+        pillarIcon: item.cards?.icone || '❤️',
+        pillarColor: getColorByCategory(item.cards?.categoria || '')
+      })) || [];
 
       // Sort by date descending
       formattedReflections.sort((a, b) => b.date.localeCompare(a.date));
@@ -117,7 +82,7 @@ export const useReflections = () => {
     try {
       // Use the specific date if provided, otherwise use today's date
       const today = new Date();
-      const targetDate = specificDate || new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+      const targetDate = specificDate || today.toISOString().split('T')[0];
 
       const { error } = await supabase
         .from('reflexoes')

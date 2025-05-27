@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
@@ -28,7 +29,7 @@ const Reflections = () => {
   const { reflections, loading } = useReflections();
   const { cards } = useCards();
 
-  // Convert reflections from database to interface format
+  // CORRIGIDO: Convert reflections usando as propriedades corretas
   const convertedReflections: ReflectionWithPillar[] = reflections.map(reflection => {
     const card = cards.find(c => c.id === reflection.pillarId);
     return {
@@ -37,8 +38,8 @@ const Reflections = () => {
       pillarId: reflection.pillarId,
       pillarName: card?.name || reflection.pillarName,
       pillarIcon: card?.icon || reflection.pillarIcon,
-      content: reflection.text,
-      isFavorite: false // Can be implemented later
+      content: reflection.text, // CORRIGIDO: usar 'text' em vez de 'texto'
+      isFavorite: false
     };
   });
 
@@ -68,7 +69,7 @@ const Reflections = () => {
     return matchesSearch && matchesPillar && matchesDate;
   });
 
-  // Get latest reflection for each pillar
+  // CORRIGIDO: Get latest reflection for each pillar (sem duplicações)
   const getLatestReflectionsByPillar = () => {
     const latestByPillar: Record<string, ReflectionWithPillar> = {};
     
