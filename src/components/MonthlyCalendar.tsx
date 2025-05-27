@@ -2,16 +2,25 @@
 import { useMemo, useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { DailyEntry } from "@/types/pillar";
 
 interface MonthlyCalendarProps {
   entries: DailyEntry[];
   pillarName: string;
   pillarColor: string;
+  onScoreUpdate?: (date: string, score: number, notes?: string) => void;
 }
 
-export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCalendarProps) => {
+export const MonthlyCalendar = ({ entries, pillarName, pillarColor, onScoreUpdate }: MonthlyCalendarProps) => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [editingScore, setEditingScore] = useState<string>("");
+  const [editingNotes, setEditingNotes] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
@@ -36,7 +45,7 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
 
   // Get color based on score
   const getScoreColor = (score: number | undefined) => {
-    if (score === undefined) return "bg-warmGray-50 text-warmGray-400 border border-warmGray-100";
+    if (score === undefined) return "bg-warmGray-50 text-warmGray-400 border border-warmGray-100 hover:bg-warmGray-100";
     if (score <= 3) return "bg-terracotta-400 text-white shadow-soft";
     if (score <= 6) return "bg-petroleum-400 text-white shadow-soft";
     return "bg-sage-500 text-white shadow-soft";
@@ -67,9 +76,40 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
     const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const entry = scoresMap.get(dateString);
     
-    if (entry) {
-      setSelectedDay(selectedDay === day ? null : day);
+    setSelectedDay(day);
+    setIsEditing(true);
+    setEditingScore(entry?.score?.toString() || "");
+    setEditingNotes(entry?.notes || "");
+  };
+
+  const handleSave = async () => {
+    if (!selectedDay || !onScoreUpdate) return;
+    
+    const score = parseInt(editingScore);
+    if (isNaN(score) || score < 0 || score > 10) {
+      alert("Por favor, insira uma pontuação válida entre 0 e 10");
+      return;
     }
+
+    try {
+      setSaving(true);
+      const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+      await onScoreUpdate(dateString, score, editingNotes);
+      setIsEditing(false);
+      setSelectedDay(null);
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      alert('Erro ao salvar a pontuação. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setSelectedDay(null);
+    setEditingScore("");
+    setEditingNotes("");
   };
 
   const getSelectedDayEntry = () => {
@@ -142,13 +182,11 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
               onClick={() => handleDayClick(day)}
               className={`
                 aspect-square flex items-center justify-center rounded-lg text-sm font-medium
-                transition-all duration-200 hover:scale-105
+                transition-all duration-200 hover:scale-105 cursor-pointer
                 ${getScoreColor(score)}
                 ${isToday ? 'ring-2 ring-sage-400 ring-offset-2' : ''}
                 ${isSelected ? 'ring-2 ring-petroleum-400 ring-offset-2' : ''}
-                ${entry ? 'cursor-pointer' : 'cursor-default'}
               `}
-              disabled={!entry}
             >
               <div className="text-center">
                 <div className="text-xs opacity-80">{day}</div>
@@ -161,32 +199,70 @@ export const MonthlyCalendar = ({ entries, pillarName, pillarColor }: MonthlyCal
         })}
       </div>
 
-      {/* Legend explanation */}
-      <div className="mt-6 p-4 bg-sage-50 rounded-xl border border-sage-100">
-        <p className="text-sm text-warmGray-600 text-center">
-          <span className="font-medium">Como ler:</span> O número no canto superior é o dia do mês. 
-          O número em destaque é a pontuação que você atribuiu ao pilar naquele dia.
-        </p>
-        <p className="text-xs text-warmGray-500 text-center mt-1">
-          Exemplo: "25 <strong>7</strong>" = dia 25, nota 7
-        </p>
-      </div>
+      {/* Editing Modal */}
+      {isEditing && selectedDay && (
+        <div className="mt-6 p-5 bg-sage-50 rounded-xl border border-sage-100">
+          <h4 className="text-lg font-semibold text-warmGray-800 mb-4">
+            {selectedEntry ? 'Editar' : 'Adicionar'} registro do dia {selectedDay}
+          </h4>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-warmGray-700 mb-2">
+                Pontuação (0-10)
+              </label>
+              <Input
+                type="number"
+                min="0"
+                max="10"
+                value={editingScore}
+                onChange={(e) => setEditingScore(e.target.value)}
+                placeholder="Digite uma pontuação de 0 a 10"
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-warmGray-700 mb-2">
+                Anotação (opcional)
+              </label>
+              <Textarea
+                value={editingNotes}
+                onChange={(e) => setEditingNotes(e.target.value)}
+                placeholder="Adicione suas observações para este dia..."
+                className="w-full min-h-[100px]"
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleSave}
+                disabled={saving || !editingScore}
+                className="bg-sage-600 hover:bg-sage-700 text-white"
+              >
+                {saving ? 'Salvando...' : 'Salvar'}
+              </Button>
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+                disabled={saving}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Selected Day Annotation */}
-      {selectedDay && (
+      {/* Selected Day Annotation (quando não está editando) */}
+      {selectedDay && !isEditing && selectedEntry?.notes && (
         <div className="mt-6 p-5 bg-sage-50 rounded-xl border border-sage-100 animate-fade-in">
           <h4 className="text-lg font-semibold text-warmGray-800 mb-3">
             Anotação do dia {selectedDay}
           </h4>
-          {selectedEntry?.notes && selectedEntry.notes.trim() !== '' ? (
-            <p className="text-warmGray-700 leading-relaxed">
-              {selectedEntry.notes}
-            </p>
-          ) : (
-            <p className="text-warmGray-500 italic">
-              Não há anotação para este dia.
-            </p>
-          )}
+          <p className="text-warmGray-700 leading-relaxed">
+            {selectedEntry.notes}
+          </p>
         </div>
       )}
     </Card>

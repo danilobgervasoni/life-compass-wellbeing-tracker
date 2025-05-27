@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Star, Search, MessageSquare, Filter, Calendar as CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useReflections } from "@/hooks/useReflections";
+import { useCards } from "@/hooks/useCards";
 
-interface Reflection {
+interface ReflectionWithPillar {
   id: string;
   date: string;
   pillarId: string;
@@ -18,107 +20,47 @@ interface Reflection {
   isFavorite: boolean;
 }
 
-// Mock data for reflections
-const mockReflections: Reflection[] = [
-  {
-    id: "1",
-    date: "2025-05-25",
-    pillarId: "dinheiro",
-    pillarName: "Dinheiro",
-    pillarIcon: "💰",
-    content: "Consegui economizar mais hoje do que esperava. Estou me sentindo mais confiante sobre meus objetivos financeiros. A disciplina está começando a dar frutos.",
-    isFavorite: true
-  },
-  {
-    id: "2",
-    date: "2025-05-25",
-    pillarId: "saude",
-    pillarName: "Saúde",
-    pillarIcon: "💪",
-    content: "Fiz exercícios pela manhã e me senti energizado o dia todo. Preciso manter essa rotina.",
-    isFavorite: false
-  },
-  {
-    id: "3",
-    date: "2025-05-24",
-    pillarId: "espiritualidade",
-    pillarName: "Espiritualidade",
-    pillarIcon: "🕊️",
-    content: "Meditei por 20 minutos hoje. A sensação de paz interior foi transformadora.",
-    isFavorite: true
-  },
-  {
-    id: "4",
-    date: "2025-05-24",
-    pillarId: "relacionamento",
-    pillarName: "Relacionamento",
-    pillarIcon: "❤️",
-    content: "Tive uma conversa importante com minha família. Nos sentimos mais conectados.",
-    isFavorite: false
-  },
-  {
-    id: "5",
-    date: "2025-05-23",
-    pillarId: "conhecimento",
-    pillarName: "Conhecimento",
-    pillarIcon: "📚",
-    content: "Li um capítulo interessante sobre produtividade. Vou aplicar as técnicas amanhã.",
-    isFavorite: false
-  },
-  {
-    id: "6",
-    date: "2025-05-22",
-    pillarId: "tempo",
-    pillarName: "Tempo",
-    pillarIcon: "⏰",
-    content: "Organizei melhor minha agenda hoje. Consegui ter mais tempo de qualidade.",
-    isFavorite: false
-  },
-  {
-    id: "7",
-    date: "2025-05-21",
-    pillarId: "social",
-    pillarName: "Social",
-    pillarIcon: "👥",
-    content: "Encontrei amigos após muito tempo. Foi revigorante para minha energia social.",
-    isFavorite: true
-  }
-];
-
-const pillarOptions = [
-  { id: "dinheiro", name: "Dinheiro", icon: "💰" },
-  { id: "espiritualidade", name: "Espiritualidade", icon: "🕊️" },
-  { id: "tempo", name: "Tempo", icon: "⏰" },
-  { id: "relacionamento", name: "Relacionamento", icon: "❤️" },
-  { id: "conhecimento", name: "Conhecimento", icon: "📚" },
-  { id: "saude", name: "Saúde", icon: "💪" },
-  { id: "social", name: "Social", icon: "👥" }
-];
-
 const Reflections = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPillar, setSelectedPillar] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<string>("");
-  const [reflections, setReflections] = useState(mockReflections);
   const [expandedReflection, setExpandedReflection] = useState<string | null>(null);
+  const { reflections, loading } = useReflections();
+  const { cards } = useCards();
+
+  // Converter reflexões do banco para o formato da interface
+  const convertedReflections: ReflectionWithPillar[] = reflections.map(reflection => {
+    const card = cards.find(c => c.id === reflection.card_id);
+    return {
+      id: reflection.id,
+      date: reflection.data,
+      pillarId: reflection.card_id,
+      pillarName: card?.name || 'Pilar Desconhecido',
+      pillarIcon: card?.icon || '❓',
+      content: reflection.texto,
+      isFavorite: false // Pode ser implementado posteriormente
+    };
+  });
 
   const handleBackToHome = () => {
     navigate("/");
   };
 
-  const toggleFavorite = (reflectionId: string) => {
-    setReflections(prev => 
-      prev.map(reflection => 
-        reflection.id === reflectionId 
-          ? { ...reflection, isFavorite: !reflection.isFavorite }
-          : reflection
-      )
-    );
+  const handleNavigateToReflections = () => {
+    navigate("/reflections");
   };
 
-  // Filter reflections based on all criteria
-  const filteredReflections = reflections.filter(reflection => {
+  const handleNavigateToCards = () => {
+    navigate("/cards");
+  };
+
+  const handleNavigateToCalendar = () => {
+    navigate("/calendar");
+  };
+
+  // Filtrar reflexões baseado nos critérios
+  const filteredReflections = convertedReflections.filter(reflection => {
     const matchesSearch = reflection.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          reflection.pillarName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPillar = !selectedPillar || reflection.pillarId === selectedPillar;
@@ -127,26 +69,30 @@ const Reflections = () => {
     return matchesSearch && matchesPillar && matchesDate;
   });
 
-  // Get latest reflection for each pillar
+  // Obter última reflexão para cada pilar
   const getLatestReflectionsByPillar = () => {
-    const latestByPillar: Record<string, Reflection> = {};
+    const latestByPillar: Record<string, ReflectionWithPillar> = {};
     
-    reflections.forEach(reflection => {
+    convertedReflections.forEach(reflection => {
       if (!latestByPillar[reflection.pillarId] || 
           new Date(reflection.date) > new Date(latestByPillar[reflection.pillarId].date)) {
         latestByPillar[reflection.pillarId] = reflection;
       }
     });
     
-    return pillarOptions.map(pillar => ({
-      pillar,
-      reflection: latestByPillar[pillar.id] || null
+    return cards.map(card => ({
+      pillar: {
+        id: card.id,
+        name: card.name,
+        icon: card.icon
+      },
+      reflection: latestByPillar[card.id] || null
     }));
   };
 
   const latestReflections = getLatestReflectionsByPillar();
 
-  // Group filtered reflections by date
+  // Agrupar reflexões filtradas por data
   const groupedReflections = filteredReflections.reduce((groups, reflection) => {
     const date = reflection.date;
     if (!groups[date]) {
@@ -154,9 +100,9 @@ const Reflections = () => {
     }
     groups[date].push(reflection);
     return groups;
-  }, {} as Record<string, Reflection[]>);
+  }, {} as Record<string, ReflectionWithPillar[]>);
 
-  // Sort dates in descending order
+  // Ordenar datas em ordem decrescente
   const sortedDates = Object.keys(groupedReflections).sort((a, b) => 
     new Date(b).getTime() - new Date(a).getTime()
   );
@@ -177,11 +123,30 @@ const Reflections = () => {
     setSearchTerm("");
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-slate-50">
+        <Header 
+          onNavigateToReflections={handleNavigateToReflections}
+          onNavigateToCards={handleNavigateToCards}
+          onNavigateToCalendar={handleNavigateToCalendar}
+        />
+        <div className="pt-20 pb-8 px-4 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-600 mx-auto"></div>
+            <p className="mt-4 text-slate-600">Carregando reflexões...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-slate-50">
       <Header 
-        onBackToHome={handleBackToHome}
-        showBackButton={true}
+        onNavigateToReflections={handleNavigateToReflections}
+        onNavigateToCards={handleNavigateToCards}
+        onNavigateToCalendar={handleNavigateToCalendar}
       />
       
       <div className="pt-20 pb-8 px-4">
@@ -222,11 +187,11 @@ const Reflections = () => {
                   <SelectValue placeholder="Filtrar por pilar" />
                 </SelectTrigger>
                 <SelectContent>
-                  {pillarOptions.map(pillar => (
-                    <SelectItem key={pillar.id} value={pillar.id}>
+                  {cards.map(card => (
+                    <SelectItem key={card.id} value={card.id}>
                       <div className="flex items-center space-x-2">
-                        <span>{pillar.icon}</span>
-                        <span>{pillar.name}</span>
+                        <span>{card.icon}</span>
+                        <span>{card.name}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -331,7 +296,7 @@ const Reflections = () => {
               </p>
               {!selectedPillar && !selectedDate && !searchTerm && (
                 <Button 
-                  onClick={handleBackToHome}
+                  onClick={() => navigate("/cards")}
                   className="mt-4 bg-emerald-600 hover:bg-emerald-700"
                 >
                   Ir para Cards
@@ -360,14 +325,6 @@ const Reflections = () => {
                             <span className="text-2xl">{reflection.pillarIcon}</span>
                             <h3 className="font-semibold text-slate-800">{reflection.pillarName}</h3>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => toggleFavorite(reflection.id)}
-                            className={`hover:bg-emerald-50 ${reflection.isFavorite ? 'text-yellow-500' : 'text-slate-400'}`}
-                          >
-                            <Star className={`h-5 w-5 ${reflection.isFavorite ? 'fill-current' : ''}`} />
-                          </Button>
                         </div>
                         <p className="text-slate-700 leading-relaxed">
                           {reflection.content}

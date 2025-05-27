@@ -18,7 +18,6 @@ export const useCards = () => {
 
       if (cardsError) throw cardsError;
 
-      // Buscar as notas para cada card
       const cardsWithEntries: Pillar[] = await Promise.all(
         cardsData.map(async (card) => {
           const { data: notasData, error: notasError } = await supabase
@@ -37,10 +36,8 @@ export const useCards = () => {
             notes: nota.anotacao || ''
           })) || [];
 
-          // Calcular pontuação atual (última nota)
           const currentScore = entries.length > 0 ? entries[entries.length - 1].score : 0;
 
-          // Calcular tendência
           let trend: 'up' | 'down' | 'stable' = 'stable';
           if (entries.length >= 2) {
             const lastScore = entries[entries.length - 1].score;

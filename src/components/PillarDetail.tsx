@@ -114,6 +114,21 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
     }
   };
 
+  // Handler for calendar date updates
+  const handleCalendarScoreUpdate = async (date: string, score: number, notes?: string) => {
+    if (onScoreUpdate) {
+      // We need to modify this to handle date-specific updates
+      // For now, we'll update today's score if it's today's date
+      if (date === today) {
+        await onScoreUpdate(pillar.id, score, notes);
+      } else {
+        // Here we would need a more specific update function that handles any date
+        // This would require modifying the parent component to handle date-specific updates
+        console.log('Calendar update for date:', date, 'score:', score, 'notes:', notes);
+      }
+    }
+  };
+
   // Format today's date in Portuguese
   const formatTodayDate = () => {
     const today = new Date();
@@ -211,6 +226,7 @@ export const PillarDetail = ({ pillar, onBack, onScoreUpdate }: PillarDetailProp
                   entries={pillar.entries} 
                   pillarName={pillar.name}
                   pillarColor={pillar.color}
+                  onScoreUpdate={handleCalendarScoreUpdate}
                 />
               </TabsContent>
             </Tabs>

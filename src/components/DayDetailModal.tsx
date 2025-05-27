@@ -56,8 +56,8 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-emerald-600" />
-              <h2 className="text-xl font-semibold text-slate-800">
+              <Calendar className="h-5 w-5 text-sage-600" />
+              <h2 className="text-xl font-semibold text-warmGray-800">
                 {formatDate(date)}
               </h2>
             </div>
@@ -65,7 +65,7 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="hover:bg-slate-100"
+              className="hover:bg-warmGray-100"
             >
               <X className="h-5 w-5" />
             </Button>
@@ -74,8 +74,8 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
           {/* Content */}
           {!hasAnyEntries ? (
             <div className="text-center py-8">
-              <div className="text-slate-400 mb-2">📅</div>
-              <p className="text-slate-600">
+              <div className="text-warmGray-400 mb-2 text-4xl">📅</div>
+              <p className="text-warmGray-600">
                 Nenhum registro feito neste dia.
               </p>
             </div>
@@ -83,12 +83,12 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
             <div className="space-y-4">
               {/* Pillars with scores */}
               <div>
-                <h3 className="text-lg font-medium text-slate-800 mb-4">
-                  Notas dos Pilares
+                <h3 className="text-lg font-medium text-warmGray-800 mb-4">
+                  Registros dos Pilares
                 </h3>
                 <div className="grid gap-3">
                   {dayEntries.map(({ pillar, entry }) => {
-                    const hasNotes = entry && entry.notes.trim() !== '';
+                    const hasNotes = entry && entry.notes && entry.notes.trim() !== '';
                     const isExpanded = expandedPillar === pillar.id;
                     const isClickable = entry && hasNotes;
 
@@ -97,25 +97,25 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
                         <div
                           className={`
                             flex items-center justify-between p-3 rounded-lg border
-                            ${entry ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}
-                            ${isClickable ? 'cursor-pointer hover:bg-emerald-100' : ''}
+                            ${entry ? 'bg-sage-50 border-sage-200' : 'bg-warmGray-50 border-warmGray-200'}
+                            ${isClickable ? 'cursor-pointer hover:bg-sage-100' : ''}
                             transition-colors duration-200
                           `}
                           onClick={() => handlePillarClick(pillar.id, !!entry, !!hasNotes)}
                         >
                           <div className="flex items-center space-x-3">
                             <span className="text-2xl">{pillar.icon}</span>
-                            <span className="font-medium text-slate-800">
+                            <span className="font-medium text-warmGray-800">
                               {pillar.name}
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
                             {entry ? (
                               <div className="flex items-center space-x-2">
-                                <span className="text-lg font-bold text-emerald-700">
+                                <span className="text-lg font-bold text-sage-700">
                                   {entry.score}
                                 </span>
-                                <span className="text-sm text-slate-500">/10</span>
+                                <span className="text-sm text-warmGray-500">/10</span>
                                 {hasNotes && (
                                   <Button
                                     variant="ghost"
@@ -123,15 +123,15 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
                                     className="p-1 h-6 w-6"
                                   >
                                     {isExpanded ? (
-                                      <ChevronUp className="h-4 w-4 text-emerald-600" />
+                                      <ChevronUp className="h-4 w-4 text-sage-600" />
                                     ) : (
-                                      <ChevronDown className="h-4 w-4 text-emerald-600" />
+                                      <ChevronDown className="h-4 w-4 text-sage-600" />
                                     )}
                                   </Button>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-sm text-slate-400">
+                              <span className="text-sm text-warmGray-400">
                                 Sem registro
                               </span>
                             )}
@@ -140,11 +140,11 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
 
                         {/* Expanded annotation */}
                         {isExpanded && hasNotes && (
-                          <div className="ml-6 p-4 bg-white border border-emerald-200 rounded-lg shadow-sm">
-                            <h4 className="text-sm font-medium text-slate-800 mb-2">
+                          <div className="ml-6 p-4 bg-white border border-sage-200 rounded-lg shadow-sm">
+                            <h4 className="text-sm font-medium text-warmGray-800 mb-2">
                               Anotação do dia {new Date(date).getDate()} – {pillar.name}
                             </h4>
-                            <p className="text-slate-700 text-sm leading-relaxed">
+                            <p className="text-warmGray-700 text-sm leading-relaxed">
                               {entry?.notes}
                             </p>
                           </div>
@@ -156,9 +156,9 @@ export const DayDetailModal = ({ date, pillars, onClose }: DayDetailModalProps) 
               </div>
 
               {/* Summary section for notes */}
-              {dayEntries.some(({ entry }) => entry && entry.notes.trim() !== '') && (
-                <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <p className="text-slate-600 text-sm text-center">
+              {dayEntries.some(({ entry }) => entry && entry.notes && entry.notes.trim() !== '') && (
+                <div className="mt-6 p-4 bg-warmGray-50 rounded-lg border border-warmGray-200">
+                  <p className="text-warmGray-600 text-sm text-center">
                     💡 Clique em um pilar com anotação para expandir os detalhes
                   </p>
                 </div>
